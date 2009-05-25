@@ -1,15 +1,10 @@
 import re
 
-from debian_bundle import debtags
 from btsutils.debbugs import debbugs
 
 from BeautifulSoup import BeautifulSoup
 
-tagdb='/var/lib/debtags/package-tags'
-
-bts_db = debbugs()
-debtags_db = debtags.DB()
-debtags_db.read(open(tagdb, 'r'))
+#bts_db = debbugs()
 
 tags_by_bugtype = {
         'RFP' : ['time-commitment::long-term', 'contribution-type::packaging'],
@@ -17,37 +12,37 @@ tags_by_bugtype = {
         }
 
 class Bug:
-    def __init__(self, bug_no, bug_url, pkgname):
+    def __init__(self, bug_no, title=None, type=None):
         # add bug title
         self.bug_no = bug_no
-        self.bug_url = bug_url
-        self.pkg= Package(pkgname, bug_no)
-        self.custom_tags = set()
-    def tags(self):
-        # TODO: metapackages and dummy pkgs
-        return debtags_db.tags_of_package(self.pkg.name)
-    def add_tags(self, tag_set):
-        self.custom_tags.update(tag_set)
-    def __repr__(self):
-        return "%s: %s" % (self.bug_no, self.pkg)
-
-def annotate_orphan(bug):
-    """add tags to a given orphan bug"""
-    pass # bug.custom_tags.update()
-
-def annotate_rfp(bug):
-    pass
-
-def annotate_rfh(bug):
-    pass
+        self.title = title
+        self.type = type
+    def get_bug_title(self):
+        if self.title is None:
+            pass # TODO: get it from bts
 
 class Package:
-    def __init__(self, pkgname, bug_no):
+    tags_of_pkg = lambda x: None
+    popcon_of_pkg = lambda x: None
+    def init_sources(debtags_func, popcon_func):
+        Package.tags_of_pkg = debtags_func
+        Package.popcon_of_pkg = popcon_func
+    init_sources = staticmethod(init_sources)
+    def __init__(self, pkgname):
         self.name = pkgname
-        self.tags = debtags_db.tags_of_package(pkgname)
-        self.bug_no = bug_no
+        self.bugs = set()
+        self.tags = Package.tags_of_pkg(pkgname)
+        self.popcon = Package.popcon_of_pkg(pkgname)
+    def add_bug(self, bugno):
+        self.bugs.add(bugno)
+    def add_tags(self, tag_set):
+        self.tags.update(tag_set)
+    def bug_list(self):
+        return list(self.bugs)
     def __repr__(self):
         return "%s: %s" % (self.name, ", ".join(self.tags))
+    def __cmp__(self, other):
+        return self.popcon - other.popcon
 
 #   <div id="inner">
 #    <h1>
@@ -67,24 +62,21 @@ class Package:
 
 def extract_bugs(html_page_handle):
     # get list of bugs and corresponding pkg names
-    bugs_by_package = {}
+    pkgs_by_name = {}
     soup = BeautifulSoup(html_page_handle.read())
     container_div = soup.find('div', id='inner')
     links = container_div.findChildren('a',
             href=re.compile('http:\/\/bugs.debian.org\/[0-9]+'))
     assert links
-    bug_list = []
     for link in links:
         bug_url = link['href']
         pkgname = link.string.split(":")[0]
         bug_no = bug_url.split("/")[-1]
-        bug = Bug(bug_no, bug_url, pkgname)
-        bug_list.append(bug)
-        pkg_bugs = bugs_by_package.get(pkgname)
-        if pkg_bugs:
-            bugs_by_package[pkgname].append(bug)
-        else:
-            bugs_by_package[pkgname] = [bug]
+        
+        pkg_obj = pkgs_by_name.get(pkgname)
+        if pkg_obj is None:
+            pkg_obj = Package(pkgname)
+            pkgs_by_name[pkgname] = pkg_obj
+        pkg_obj.add_bug(Bug(bug_no, pkgname))
 
-    return bug_list, bugs_by_package
-
+    return pkgs_by_name

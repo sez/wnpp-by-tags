@@ -3,7 +3,7 @@ import re
 
 space_pat = re.compile("  *")
 
-class popcon:
+class Popcon:
     def __init__(self, popcon_file):
         self.inst_by_pkg = {}
         assert os.path.exists(popcon_file)
@@ -16,12 +16,12 @@ class popcon:
                 except ValueError:
                     inst = -1
                 self.inst_by_pkg[pkg] = inst
-    def pkg_inst(self, pkg):
+    def inst_of_pkg(self, pkg):
         try:
             return self.inst_by_pkg[pkg]
         except KeyError:
             return None
 
 if __name__ == '__main__':
-    pc = popcon()
-    print pc.pkg_inst('indywiki')
+    pc = Popcon()
+    print pc.inst_of_pkg('indywiki')

@@ -1,5 +1,16 @@
-from debian_bundle import debtags
 import re
+import os.path
+
+from debian_bundle import debtags
+
+class Debtags:
+    def __init__(self, tagdb='/var/lib/debtags/package-tags'):
+        assert os.path.exists(tagdb)
+        self.db = debtags.DB()
+        self.db.read(open(tagdb, 'r'))
+    def tags_of_pkg(self, pkgname):
+        # TODO: virtual and dummy pkgs
+        return self.db.tags_of_package(pkgname)
 
 def gen_filter(match_tags, excl_tags):
     return lambda tags: match_tags.issubset(tags) and \
@@ -10,7 +21,3 @@ def filter_pkgs(tag_db_fd, match_tags, excl_tags):
     db.read(tag_db_fd)
     select = gen_filter(match_tags, excl_tags)
     return db.filter_packages_tags(lambda x: select(x[1]))
-
-#print adb.package_count()
-#for p in adb.iter_packages():
-#        print p
