@@ -60,9 +60,11 @@ class Package:
 #      )
 #     </li>
 
-def extract_bugs(html_page_handle):
-    # get list of bugs and corresponding pkg names
-    pkgs_by_name = {}
+#TODO: define a map of bug_type to cleanup function (eg, being_adopted -->
+#parse page for pages since adoption, and filter out if less than a threshold)
+
+def extract_bugs(html_page_handle, pkgs_by_name, bug_type):
+    """Get list of bugs and corresponding pkg names."""
     soup = BeautifulSoup(html_page_handle.read())
     container_div = soup.find('div', id='inner')
     links = container_div.findChildren('a',
@@ -77,6 +79,6 @@ def extract_bugs(html_page_handle):
         if pkg_obj is None:
             pkg_obj = Package(pkgname)
             pkgs_by_name[pkgname] = pkg_obj
-        pkg_obj.add_bug(Bug(bug_no, pkgname))
+        pkg_obj.add_bug(Bug(bug_no, pkgname, bug_type))
 
     return pkgs_by_name
