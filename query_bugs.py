@@ -1,21 +1,28 @@
 #!/usr/bin/python
 
+import os
 import sys
+import time
 from optparse import OptionParser
 from StringIO import StringIO
 
+import conf
 from util.bugs import extract_bugs, Package
 from util.debtags import filter_pkgs, Debtags
 from util.popcon import Popcon
 
-orphaned_file = "/home/sez/fun/debian/participation/cache/bugs/orphaned.html"
-popcon_file = '/home/sez/fun/debian/participation/cache/popcon-data/all-popcon-results.txt'
+orphaned_file = "%s/bugs/orphaned.html" % conf.cache_dir
+popcon_file = '%s/popcon/all-popcon-results.txt' % conf.cache_dir
 
-verbose = False
+verbose = True
 
 def vprint(msg):
     if verbose:
         print msg
+
+def giveup(msg):
+    sys.stderr.write("%s\n" % msg)
+    sys.exit(1)
 
 def parse_args():
     usage = "usage: %prog --match-tags t1,t2,... [--exclude-tags t3,t4,...]"
@@ -24,6 +31,9 @@ def parse_args():
                       help="match packages having all these tags")
     parser.add_option("-x", "--exclude-tags", dest="excl_tags",
                       help="filter out packages having any of these tags")
+    parser.add_option("-f", "--force-refresh", dest="force_update",
+                      default=False,
+                      help="refresh bug/popcon data regardless of age")
     (options, args) = parser.parse_args()
     if len(args) > 0:
         parser.error("Unknown argument %s")
@@ -38,8 +48,33 @@ def parse_args():
         excl_tags = set()
     return match_tags, excl_tags
 
+def wget(url, filename):
+    """use a std module"""
+    print "downloading ", url
+
+def refresh_data():
+    """Downloads bug and popcon data, if what's available is too old."""
+    if not os.path.isdir(conf.cache_dir):
+        try:
+            os.makedirs(conf.cache_dir)
+        except OSError:
+            giveup("cache directory '%s' doesn't exist and I can't created it")
+    now = time.time()
+    bugs_mtime_threshold = int(conf.bugs_refresh_period_in_days) * 86400
+    for bug_type in conf.bug_types:
+        filename = "%s/bug-data/%s.html" % (conf.cache_dir, bug_type)
+        if os.path.isfile(filename):
+            mtime = os.stat(open(filename)).st_mtime
+            if now - mtime < bugs_mtime_threshold:
+                vprint("%s exists and isn't old enough to update")
+                continue
+        wget("%s/%s.html" % (conf.wnpp_url, bug_type), filename)
+    # same for popcon
+    # generalise this
+
 def main():
     # misc initialisations
+    refresh_data()
     match_tags, excl_tags = parse_args()
     debtags = Debtags()
     popcon = Popcon(popcon_file)
