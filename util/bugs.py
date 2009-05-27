@@ -9,7 +9,6 @@ from btsutils.debbugs import debbugs
 import conf
 from generic import HttpClient, create_file
 
-
 #bts_db = debbugs()
 
 class BugType:
@@ -52,14 +51,13 @@ def update_bug_data(update_anyway, cache_dir, bug_types, verbose=False):
 
     ``cache_dir'' where to store the downloaded files
 
-    ``bug_types'' what bug types to download data for
+    ``bug_types'' what bug types to download data for (full names)
 
     """
     #TODO: download data only for the specified data types
     assert os.path.isdir(cache_dir)
     # see which bug files have to be updated, if any
-    all_files = ["%s/%s.html" % (cache_dir, bt)
-             for bt in conf.bug_types_to_query]
+    all_files = ["%s/%s.html" % (cache_dir, bt) for bt in bug_types]
     if update_anyway:
         files_to_update = all_files
     else:

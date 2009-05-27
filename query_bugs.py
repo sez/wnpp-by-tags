@@ -45,8 +45,9 @@ class Arguments:
 
         if options.bug_types == "any":
             # query against default bug types
-            self.bug_types = conf.bug_types_to_query
-            self.bug_types = [BugType.abbreviation_of(bt) for bt in self.bug_types]
+            self.full_name_bug_types = conf.bug_types_to_query
+            self.bug_types = [BugType.abbreviation_of(bt) \
+                              for bt in self.full_name_bug_types]
         else:
             # convert any bug type acronyms to uppercase
             self.bug_types = [b.upper() if len(b) <= 3 else b \
@@ -67,7 +68,7 @@ def main():
     args = Arguments()
     ensure_dir_exists(conf.cache_dir)
     update_bug_data(args.force_update, "%s/bugs/" % conf.cache_dir,
-                    args.bug_types, args.verbose)
+                    args.full_name_bug_types, args.verbose)
     update_popcon_data(conf.cache_dir)
     debtags = Debtags()
     popcon = Popcon(conf.cache_dir)
