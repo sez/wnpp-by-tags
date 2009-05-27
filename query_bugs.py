@@ -1,153 +1,101 @@
 #!/usr/bin/python
 
-import httplib
 import os
 import sys
-import time
 from optparse import OptionParser
 from StringIO import StringIO
 from glob import glob
 
 import conf
-from util.bugs import extract_bugs, Package
+from util.generic import warn, giveup, ensure_dir_exists
+from util.bugs import extract_bugs, update_bug_data, Package, BugType
 from util.debtags import filter_pkgs, Debtags
-from util.popcon import Popcon
+from util.popcon import Popcon, update_popcon_data
 
-popcon_file = '%s/popcon/all-popcon-results.txt' % conf.cache_dir
+class Arguments:
+    def __init__(self):
+        usage = "usage: %prog --match-tags t1,t2,... [--exclude-tags t3,t4,...]"
+        parser = OptionParser(usage)
+        parser.add_option("-m", "--match-tags", dest="match_tags",
+                          help="match packages having all these tags")
+        parser.add_option("-x", "--exclude-tags", dest="excl_tags",
+                          help="filter out packages having any of these tags")
+        parser.add_option("-t", "--bug-types", dest="bug_types", default="any",
+                          help="""query only against bugs of the types in this
+                          comma-separated list (valid types: any, O, RFA, RFH,
+                          ITP, being_adopted; default: any)""")
+        parser.add_option("-f", "--force-update", action="store_true",
+                          dest="force_update", default=False,
+                          help="update bug/popcon data regardless of age")
+        parser.add_option("-v", "--verbose", action="store_true",
+                          dest="verbose", default=False)
+        (options, args) = parser.parse_args()
+        if len(args) > 0:
+            parser.error("Unknown argument %s")
+        if not options.match_tags:
+            parser.error("You must specify at least -m")
+            exit(1)
 
-verbose = True
+        # parse tags to match and tags to exclude
+        self.match_tags = set(options.match_tags.split(","))
+        if options.excl_tags:
+            self.excl_tags = set(options.excl_tags.split(","))
+        else:
+            self.excl_tags = set()
 
-bug_type_map = { "help_requested" : "RFH",
-                 "orphaned" : "O",
-                 "rfa_bypackage" : "RFA",
-                 "being_adopted" : "being adopted" }
+        if options.bug_types == "any":
+            # query against default bug types
+            self.bug_types = conf.bug_types_to_query
+            self.bug_types = [BugType.abbreviation_of(bt) for bt in self.bug_types]
+        else:
+            # convert any bug type acronyms to uppercase
+            self.bug_types = [b.upper() if len(b) <= 3 else b \
+                              for b in options.bug_types.split(",")]
+            # check that the user-supplied bug types are valid
+            self.full_name_bug_types = [BugType.full_name_of(bt) for bt in self.bug_types]
+            invalid_bug_types = set(self.full_name_bug_types).difference(conf.known_bug_types)
+            if invalid_bug_types:
+                giveup("invalid  bug type(s): %s" % ", ".join(list(invalid_bug_types)))
+            self.bug_types = [BugType.abbreviation_of(bt) for bt in self.bug_types]
+        self.bug_types = set(self.bug_types)
 
-def vprint(msg):
-    if verbose:
-        print msg
-
-def warn(msg):
-    sys.stderr.write("%s\n" % msg)
-
-def giveup(msg):
-    sys.stderr.write("%s\n" % msg)
-    sys.exit(1)
-
-def create_file(filename, contents):
-    f = open(filename, "w")
-    f.write(contents)
-    f.close()
-
-def parse_args():
-    usage = "usage: %prog --match-tags t1,t2,... [--exclude-tags t3,t4,...]"
-    parser = OptionParser(usage)
-    parser.add_option("-m", "--match-tags", dest="match_tags",
-                      help="match packages having all these tags")
-    parser.add_option("-x", "--exclude-tags", dest="excl_tags",
-                      help="filter out packages having any of these tags")
-    parser.add_option("-f", "--force-update", action="store_true",
-                      dest="force_update", default=False,
-                      help="update bug/popcon data regardless of age")
-    (options, args) = parser.parse_args()
-    if len(args) > 0:
-        parser.error("Unknown argument %s")
-    if not options.match_tags:
-        parser.error("You must specify at least -m")
-        exit(1)
-
-    match_tags = set(options.match_tags.split(","))
-    if options.excl_tags:
-        excl_tags = set(options.excl_tags.split(","))
-    else:
-        excl_tags = set()
-    return match_tags, excl_tags, options.force_update
-
-class HttpClient:
-    def __init__(self, http_server="www.debian.org"):
-        self.conn = httplib.HTTPConnection(http_server)
-        self.server_name = http_server
-    def get(self, url_suffix, url_prefix="/devel/wnpp"):
-        """use a std module"""
-        url = "%s/%s" % (url_prefix, url_suffix)
-        self.conn.request("GET", url)
-        response = self.conn.getresponse()
-        vprint("downloading %s" % url)
-        if response.status == 200:
-            return response.read()
-        raise Exception("%d %s" % (response.status, response.reason))
-    def close(self):
-        try:
-            self.conn.close()
-        except Exception:
-            pass
-
-def update_bug_data(update_anyhow):
-    """Downloads bug and popcon data, if what's available is too old."""
-    if not os.path.isdir(conf.cache_dir):
-        try:
-            os.makedirs(conf.cache_dir)
-        except OSError:
-            giveup("cache directory '%s' doesn't exist and I can't created it")
-
-    # see which bug files have to be updated, if any
-    all_files = ["%s/bugs/%s.html" % (conf.cache_dir, bt)
-             for bt in conf.bug_types_to_query]
-    if update_anyhow:
-        files_to_update = all_files
-    else:
-        now = time.time()
-        def file_is_ok(filename, min_age):
-            """True if file exists and isn't too old."""
-            return os.path.isfile(filename) and \
-                   now - os.stat(filename).st_mtime < min_age
-        bugs_mtime_threshold = int(conf.bugs_update_period_in_days) * 86400
-        files_to_update = [f for f in all_files \
-                if not file_is_ok(f, bugs_mtime_threshold)]
-
-        if not files_to_update:
-            vprint("using previously downloaded bug data")
-            return
-
-    # download whatever files are missing or are old
-    http_client = HttpClient()
-    for filename in files_to_update:
-        url_suffix = os.path.basename(filename)
-        try:
-            bug_page = http_client.get(url_suffix)
-            create_file(filename, bug_page)
-        except Exception, e:
-            warn("failed to download ``%s'' bugs (%s)" % (filename, e))
-    http_client.close()
-
-def update_popcon_data():
-    pass
+        self.force_update = options.force_update
+        self.verbose = options.verbose
 
 def main():
     # misc initialisations
-    match_tags, excl_tags, force_update = parse_args()
-    update_bug_data(force_update)
+    args = Arguments()
+    ensure_dir_exists(conf.cache_dir)
+    update_bug_data(args.force_update, "%s/bugs/" % conf.cache_dir,
+                    args.bug_types, args.verbose)
+    update_popcon_data(conf.cache_dir)
     debtags = Debtags()
-    popcon = Popcon(popcon_file)
+    popcon = Popcon(conf.cache_dir)
     Package.init_sources(debtags.tags_of_pkg, popcon.inst_of_pkg)
 
-    # build dict of package objects, indexed by package names
+    # build dict of package objects, indexed by package name, using the HTML
+    # BTS pages
     pkgs_by_name = {}
     for bug_page in glob("%s/bugs/*.html" % conf.cache_dir):
-        bug_type = bug_type_map[os.path.basename(bug_page).rstrip(".html")]
-        pkgs_by_name = extract_bugs(open(bug_page, "r"), pkgs_by_name, bug_type)
+        bug_type = BugType.abbreviation_of(os.path.basename(bug_page).rstrip(".html"))
+        if bug_type in args.bug_types:
+            pkgs_by_name = extract_bugs(open(bug_page, "r"), pkgs_by_name, bug_type)
     nbugs = sum([len(p.bugs) for p in pkgs_by_name.itervalues()])
-    vprint("%d bugs in %s packages" % (nbugs, len(pkgs_by_name)))
+    if args.verbose:
+        print "%d bugs in %s packages" % (nbugs, len(pkgs_by_name))
 
     # filter packages using user-supplied tags
     tag_db = StringIO("\n".join([str(pkg) for pkg in pkgs_by_name.itervalues()]))
-    matching_pkg_names = filter_pkgs(tag_db, match_tags, excl_tags)
+    matching_pkg_names = filter_pkgs(tag_db, args.match_tags, args.excl_tags)
     pkg_objs = [pkgs_by_name[p] for p in matching_pkg_names.iter_packages()]
-    vprint("query matches %d packages" % len(pkg_objs))
+    if args.verbose:
+        print "query matches %d packages" % len(pkg_objs)
 
     # print list of matching packages, along with bug number and popcon
     for pkg_obj in sorted(pkg_objs, reverse=True):
         for b in pkg_obj.bug_list():
-            print "%s: %s #%s (inst: %d)" % (b.type, pkg_obj.name, b.bug_no, pkg_obj.popcon)
+            print "%s: %s #%s (inst: %d)" % (b.type, pkg_obj.name, b.bug_no,
+                                             pkg_obj.popcon)
 
 if __name__ == '__main__':
     main()

@@ -1,15 +1,39 @@
 import re
-
-from btsutils.debbugs import debbugs
+import os
+import time
 
 from BeautifulSoup import BeautifulSoup
 
+from btsutils.debbugs import debbugs
+
+import conf
+from generic import HttpClient, create_file
+
+
 #bts_db = debbugs()
 
-tags_by_bugtype = {
-        'RFP' : ['time-commitment::long-term', 'contribution-type::packaging'],
-        'RFA' : ['time-commitment::long-term', 'contribution-type::packaging'],
-        }
+class BugType:
+    to_abbn = { "help_requested" : "RFH",
+                "orphaned" : "O",
+                "rfa_bypackage" : "RFA",
+                "being_adopted" : "being adopted" }
+    to_name = { "RFH" : "help_requested",
+                "O" : "orphaned" ,
+                "RFA" : "rfa_bypackage",
+                "being adopted" : "being_adopted" }
+    def full_name_of(t):
+        try:
+            return BugType.to_name[t]
+        except KeyError:
+            return t
+    def abbreviation_of(t):
+        try:
+            return BugType.to_abbn[t]
+        except KeyError:
+            return t
+    full_name_of = staticmethod(full_name_of)
+    abbreviation_of = staticmethod(abbreviation_of)
+
 
 class Bug:
     def __init__(self, bug_no, title=None, type=None):
@@ -20,6 +44,50 @@ class Bug:
     def get_bug_title(self):
         if self.title is None:
             pass # TODO: get it from bts
+
+def update_bug_data(update_anyway, cache_dir, bug_types, verbose=False):
+    """Download bug if what's available is too old.
+    
+    ``update_anyway'' will download data regardless of how old they are
+
+    ``cache_dir'' where to store the downloaded files
+
+    ``bug_types'' what bug types to download data for
+
+    """
+    #TODO: download data only for the specified data types
+    assert os.path.isdir(cache_dir)
+    # see which bug files have to be updated, if any
+    all_files = ["%s/%s.html" % (cache_dir, bt)
+             for bt in conf.bug_types_to_query]
+    if update_anyway:
+        files_to_update = all_files
+    else:
+        now = time.time()
+        def file_is_ok(filename, min_age):
+            """True if file exists and isn't too old."""
+            return os.path.isfile(filename) and \
+                   now - os.stat(filename).st_mtime < min_age
+        bugs_mtime_threshold = int(conf.bugs_update_period_in_days) * 86400
+        files_to_update = [f for f in all_files \
+                if not file_is_ok(f, bugs_mtime_threshold)]
+
+        if not files_to_update:
+            if verbose:
+                print "using previously downloaded bug data"
+            return
+
+    # download whatever files are missing or are old
+    http_client = HttpClient("www.debian.org", verbose)
+    for filename in files_to_update:
+        url_suffix = os.path.basename(filename)
+        try:
+            bug_page = http_client.get(url_suffix)
+            create_file(filename, bug_page)
+        except Exception, e:
+            warn("failed to download ``%s'' bugs (%s)" % (filename, e))
+    http_client.close()
+
 
 class Package:
     tags_of_pkg = lambda x: None
@@ -42,6 +110,7 @@ class Package:
     def __repr__(self):
         return "%s: %s" % (self.name, ", ".join(self.tags))
     def __cmp__(self, other):
+        """Used to allow sorting of packages based on popularity."""
         return self.popcon - other.popcon
 
 #   <div id="inner">

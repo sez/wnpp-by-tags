@@ -1,15 +1,16 @@
 import os
-import re
 
-space_pat = re.compile("  *")
+from generic import remove_space_dups
 
 class Popcon:
-    def __init__(self, popcon_file):
-        self.inst_by_pkg = {}
+    def __init__(self, cache_dir):
+        popcon_file = "%s/popcon/all-popcon-results.txt" % cache_dir
+        assert os.path.isdir(cache_dir)
         assert os.path.exists(popcon_file)
+        self.inst_by_pkg = {}
         for line in open(popcon_file):
             if line.startswith("Package:"):
-                line = space_pat.sub(" ", line)
+                line = remove_space_dups(line)
                 _, pkg, inst, = line.split(" ")[:3]
                 try:
                     inst = int(inst)
@@ -21,6 +22,9 @@ class Popcon:
             return self.inst_by_pkg[pkg]
         except KeyError:
             return None
+
+def update_popcon_data(cache_dir):
+    pass
 
 if __name__ == '__main__':
     pc = Popcon()
