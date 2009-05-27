@@ -45,9 +45,9 @@ def parse_args():
                       help="match packages having all these tags")
     parser.add_option("-x", "--exclude-tags", dest="excl_tags",
                       help="filter out packages having any of these tags")
-    parser.add_option("-f", "--force-refresh", dest="force_update",
-                      default=False,
-                      help="refresh bug/popcon data regardless of age")
+    parser.add_option("-f", "--force-update", action="store_true",
+                      dest="force_update", default=False,
+                      help="update bug/popcon data regardless of age")
     (options, args) = parser.parse_args()
     if len(args) > 0:
         parser.error("Unknown argument %s")
@@ -60,7 +60,7 @@ def parse_args():
         excl_tags = set(options.excl_tags.split(","))
     else:
         excl_tags = set()
-    return match_tags, excl_tags
+    return match_tags, excl_tags, options.force_update
 
 class HttpClient:
     def __init__(self, http_server="www.debian.org"):
@@ -81,7 +81,7 @@ class HttpClient:
         except Exception:
             pass
 
-def refresh_bug_data():
+def update_bug_data(update_anyhow):
     """Downloads bug and popcon data, if what's available is too old."""
     if not os.path.isdir(conf.cache_dir):
         try:
@@ -90,18 +90,23 @@ def refresh_bug_data():
             giveup("cache directory '%s' doesn't exist and I can't created it")
 
     # see which bug files have to be updated, if any
-    now = time.time()
-    def file_is_ok(filename, min_age):
-        """True if file exists and isn't too old."""
-        return os.path.isfile(filename) and \
-               now - os.stat(filename).st_mtime < min_age
-    files = ["%s/bugs/%s.html" % (conf.cache_dir, bt) for bt in conf.bug_types_to_query]
-    bugs_mtime_threshold = int(conf.bugs_refresh_period_in_days) * 86400
-    files_to_update = [f for f in files if not file_is_ok(f, bugs_mtime_threshold)]
+    all_files = ["%s/bugs/%s.html" % (conf.cache_dir, bt)
+             for bt in conf.bug_types_to_query]
+    if update_anyhow:
+        files_to_update = all_files
+    else:
+        now = time.time()
+        def file_is_ok(filename, min_age):
+            """True if file exists and isn't too old."""
+            return os.path.isfile(filename) and \
+                   now - os.stat(filename).st_mtime < min_age
+        bugs_mtime_threshold = int(conf.bugs_update_period_in_days) * 86400
+        files_to_update = [f for f in all_files \
+                if not file_is_ok(f, bugs_mtime_threshold)]
 
-    if not files_to_update:
-        vprint("using previously downloaded bug data")
-        return
+        if not files_to_update:
+            vprint("using previously downloaded bug data")
+            return
 
     # download whatever files are missing or are old
     http_client = HttpClient()
@@ -114,13 +119,13 @@ def refresh_bug_data():
             warn("failed to download ``%s'' bugs (%s)" % (filename, e))
     http_client.close()
 
-def refresh_popcon_data():
+def update_popcon_data():
     pass
 
 def main():
     # misc initialisations
-    refresh_bug_data()
-    match_tags, excl_tags = parse_args()
+    match_tags, excl_tags, force_update = parse_args()
+    update_bug_data(force_update)
     debtags = Debtags()
     popcon = Popcon(popcon_file)
     Package.init_sources(debtags.tags_of_pkg, popcon.inst_of_pkg)

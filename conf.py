@@ -1,6 +1,6 @@
 cache_dir = "/home/sez/fun/debian/participation/cache"
-bugs_refresh_period_in_days = 7
-popcon_refresh_period_in_days = 30
+bugs_update_period_in_days = 7
+popcon_update_period_in_days = 30
 being_adopted_threshold_in_days = 150
 being_packaged_threshold_in_days = 150
 
