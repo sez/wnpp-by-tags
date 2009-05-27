@@ -92,10 +92,10 @@ def refresh_bug_data():
     # see which bug files have to be updated, if any
     now = time.time()
     def file_is_ok(filename, min_age):
-        """True if file exist and isn't too old."""
+        """True if file exists and isn't too old."""
         return os.path.isfile(filename) and \
                now - os.stat(filename).st_mtime < min_age
-    files = ["%s/bugs/%s.html" % (conf.cache_dir, bt) for bt in conf.bug_types]
+    files = ["%s/bugs/%s.html" % (conf.cache_dir, bt) for bt in conf.bug_types_to_query]
     bugs_mtime_threshold = int(conf.bugs_refresh_period_in_days) * 86400
     files_to_update = [f for f in files if not file_is_ok(f, bugs_mtime_threshold)]
 
