@@ -14,7 +14,9 @@ from util.popcon import Popcon, update_popcon_data
 
 class Arguments:
     def __init__(self):
-        usage = "usage: %prog --match-tags t1,t2,... [--exclude-tags t3,t4,...]"
+        usage = \
+"""usage: %prog --match-tags t1,t2,... [--exclude-tags t3,t4,...]
+                     [-f] [-v] [-t RFA,O,...]"""
         parser = OptionParser(usage)
         parser.add_option("-m", "--match-tags", dest="match_tags",
                           help="match packages having all these tags")
@@ -26,7 +28,10 @@ class Arguments:
                           ITP, being_adopted; default: any)""")
         parser.add_option("-f", "--force-update", action="store_true",
                           dest="force_update", default=False,
-                          help="update bug/popcon data regardless of age")
+                          help="""update bug and popcon data regardless of age
+                                  (by default,  bug data is updated when it's
+                                  older than 7 days, and popcon data when it's
+                                  older than 30 days)""")
         parser.add_option("-v", "--verbose", action="store_true",
                           dest="verbose", default=False)
         (options, args) = parser.parse_args()
