@@ -86,16 +86,15 @@ def main():
         bug_type = BugType.abbreviation_of(os.path.basename(bug_page).rstrip(".html"))
         if bug_type in args.bug_types:
             pkgs_by_name = extract_bugs(open(bug_page, "r"), pkgs_by_name, bug_type)
-    nbugs = sum([len(p.bugs) for p in pkgs_by_name.itervalues()])
-    if args.verbose:
-        print "%d bugs in %s packages" % (nbugs, len(pkgs_by_name))
 
     # filter packages using user-supplied tags
     tag_db = StringIO("\n".join([str(pkg) for pkg in pkgs_by_name.itervalues()]))
     matching_pkg_names = filter_pkgs(tag_db, args.match_tags, args.excl_tags)
     pkg_objs = [pkgs_by_name[p] for p in matching_pkg_names.iter_packages()]
     if args.verbose:
-        print "query matches %d packages" % len(pkg_objs)
+        nbugs = sum([len(p.bugs) for p in pkgs_by_name.itervalues()])
+        print "loaded %d bugs in %s packages; query matches %d packages" \
+                % (nbugs, len(pkgs_by_name), len(pkg_objs))
 
     # print list of matching packages, along with bug number and popcon
     for pkg_obj in sorted(pkg_objs, reverse=True):

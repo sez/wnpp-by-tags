@@ -13,8 +13,8 @@ class Debtags:
         return self.db.tags_of_package(pkgname)
 
 def gen_filter(match_tags, excl_tags):
-    return lambda tags: match_tags.issubset(tags) and \
-                        all(t not in excl_tags for t in tags)
+    return lambda pkg_tags: match_tags.issubset(pkg_tags) and \
+                        all(t not in excl_tags for t in pkg_tags)
 
 def filter_pkgs(tag_db_fd, match_tags, excl_tags):
     db = debtags.DB()
