@@ -7,10 +7,12 @@ class Debtags(object):
     tagdb_filename='/var/lib/debtags/package-tags'
     def __init__(self, tagdb=None):
         if not tagdb:
-            assert os.path.exists(Debtags.tagdb_filename)
-            tagdb = open(Debtags.tagdb_filename)
+            tagdb = Debtags.tagdb_filename
+        assert os.path.exists(tagdb)
+        tagdb = open(tagdb)
         self.db = debtags.DB()
         self.db.read(tagdb)
+        tagdb.close()
     def tags_of_pkg(self, pkgname):
         # TODO: virtual and dummy pkgs
         return self.db.tags_of_package(pkgname)
