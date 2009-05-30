@@ -33,6 +33,10 @@ class Arguments:
                                   (by default,  bug data is updated when it's
                                   older than 7 days, and popcon data when it's
                                   older than 30 days)""")
+        parser.add_option("--debtags-file", dest="debtags_file",
+                          default="/var/lib/debtags/package-tags",
+                          help="""use an alternative debtags file
+                          (default: /var/lib/debtags/package-tags)""")
         parser.add_option("-u", "--untagged-pkgs-only", action="store_true",
                           dest="show_untagged",
                           help="""list only bugs for packages that haven't
@@ -77,6 +81,7 @@ class Arguments:
         self.force_update = options.force_update
         self.verbose = options.verbose
         self.show_untagged = options.show_untagged
+        self.debtags_file = options.debtags_file
 
 def main():
     # misc initialisations
@@ -86,7 +91,7 @@ def main():
     update_bug_data(args.force_update, bugs_dir,
                     args.full_name_bug_types, args.verbose)
     update_popcon_data(conf.cache_dir)
-    debtags = Debtags()
+    debtags = Debtags(args.debtags_file)
     popcon_file = "%s/popcon/all-popcon-results.txt" % conf.cache_dir
     assert os.path.isfile(popcon_file)
     popcon = Popcon(open(popcon_file, "r"))
@@ -100,7 +105,6 @@ def main():
         if bug_type in args.bug_types:
             pkgs_by_name = extract_bugs(open(bug_page, "r"), pkgs_by_name, bug_type)
 
-    # FIXME mktemp is treated as if it does have tags
     if args.show_untagged:
         # select only packages without tags
         pkg_objs = [p for p in pkgs_by_name.itervalues() if not p.tags]
