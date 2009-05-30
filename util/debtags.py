@@ -3,11 +3,14 @@ import os.path
 
 from debian_bundle import debtags
 
-class Debtags:
-    def __init__(self, tagdb='/var/lib/debtags/package-tags'):
-        assert os.path.exists(tagdb)
+class Debtags(object):
+    tagdb_filename='/var/lib/debtags/package-tags'
+    def __init__(self, tagdb=None):
+        if not tagdb:
+            assert os.path.exists(Debtags.tagdb_filename)
+            tagdb = open(Debtags.tagdb_filename)
         self.db = debtags.DB()
-        self.db.read(open(tagdb, 'r'))
+        self.db.read(tagdb)
     def tags_of_pkg(self, pkgname):
         # TODO: virtual and dummy pkgs
         return self.db.tags_of_package(pkgname)
@@ -17,6 +20,15 @@ def gen_filter(match_tags, excl_tags):
                         all(t not in excl_tags for t in pkg_tags)
 
 def filter_pkgs(tag_db_fd, match_tags, excl_tags):
+    """Return an iterator with pkgs with and without certain tags.
+
+    ``tag_db_fd'' a multi-line string with the syntax of
+                   /var/lib/debtags/package-tags
+
+    ``match_tags'' select only packages matching all these tags (set)
+
+    ``excl_tags'' filter out packages having any of these tags (set)
+    """
     db = debtags.DB()
     db.read(tag_db_fd)
     select = gen_filter(match_tags, excl_tags)

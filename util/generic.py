@@ -26,7 +26,7 @@ def ensure_dir_exists(dirname):
         except OSError, e:
             giveup("failed to create %s ('%s')" % (dirname, e))
 
-class HttpClient:
+class HttpClient(object):
     """Wrapper around httplib to get pages from a single web server."""
     def __init__(self, http_server, verbose):
         self.conn = httplib.HTTPConnection(http_server)

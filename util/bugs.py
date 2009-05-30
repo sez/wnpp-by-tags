@@ -11,7 +11,7 @@ from generic import HttpClient, create_file
 
 #bts_db = debbugs()
 
-class BugType:
+class BugType(object):
     to_abbn = { "help_requested" : "RFH",
                 "orphaned" : "O",
                 "rfa_bypackage" : "RFA",
@@ -34,7 +34,7 @@ class BugType:
     abbreviation_of = staticmethod(abbreviation_of)
 
 
-class Bug:
+class Bug(object):
     def __init__(self, bug_no, title=None, type=None):
         # add bug title
         self.bug_no = bug_no
@@ -54,7 +54,6 @@ def update_bug_data(update_anyway, cache_dir, bug_types, verbose=False):
     ``bug_types'' what bug types to download data for (full names)
 
     """
-    #TODO: download data only for the specified data types
     assert os.path.isdir(cache_dir)
     # see which bug files have to be updated, if any
     all_files = ["%s/%s.html" % (cache_dir, bt) for bt in bug_types]
@@ -87,7 +86,7 @@ def update_bug_data(update_anyway, cache_dir, bug_types, verbose=False):
     http_client.close()
 
 
-class Package:
+class Package(object):
     tags_of_pkg = lambda x: None
     popcon_of_pkg = lambda x: None
     def init_sources(debtags_func, popcon_func):
@@ -141,7 +140,7 @@ def extract_bugs(html_page_handle, pkgs_by_name, bug_type):
         bug_url = link['href']
         pkgname = link.string.split(":")[0]
         bug_no = bug_url.split("/")[-1]
-        
+
         pkg_obj = pkgs_by_name.get(pkgname)
         if pkg_obj is None:
             pkg_obj = Package(pkgname)

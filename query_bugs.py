@@ -19,7 +19,8 @@ class Arguments:
                      [-f] [-v] [-t RFA,O,...]"""
         parser = OptionParser(usage)
         parser.add_option("-m", "--match-tags", dest="match_tags",
-                          help="match packages having all these tags")
+                          help="""match packages having all these tags (not to
+                          be used with -u)""")
         parser.add_option("-x", "--exclude-tags", dest="excl_tags",
                           help="filter out packages having any of these tags")
         parser.add_option("-t", "--bug-types", dest="bug_types", default="any",
@@ -32,21 +33,29 @@ class Arguments:
                                   (by default,  bug data is updated when it's
                                   older than 7 days, and popcon data when it's
                                   older than 30 days)""")
+        parser.add_option("-u", "--untagged-pkgs-only", action="store_true",
+                          dest="show_untagged",
+                          help="""list only bugs for packages that haven't
+                          been tagged yet (not to be used with -m)""")
         parser.add_option("-v", "--verbose", action="store_true",
                           dest="verbose", default=False)
         (options, args) = parser.parse_args()
         if len(args) > 0:
             parser.error("Unknown argument %s")
-        if not options.match_tags:
-            parser.error("You must specify at least -m")
+        if not options.match_tags and not options.show_untagged:
+            parser.error("You must specify at least either -m or -u")
+            exit(1)
+        if options.match_tags and options.show_untagged:
+            parser.error("You must either -m or -u")
             exit(1)
 
-        # parse tags to match and tags to exclude
-        self.match_tags = set(options.match_tags.split(","))
-        if options.excl_tags:
-            self.excl_tags = set(options.excl_tags.split(","))
-        else:
-            self.excl_tags = set()
+        if options.match_tags:
+            # parse tags to match and tags to exclude
+            self.match_tags = set(options.match_tags.split(","))
+            if options.excl_tags:
+                self.excl_tags = set(options.excl_tags.split(","))
+            else:
+                self.excl_tags = set()
 
         if options.bug_types == "any":
             # query against default bug types
@@ -67,30 +76,41 @@ class Arguments:
 
         self.force_update = options.force_update
         self.verbose = options.verbose
+        self.show_untagged = options.show_untagged
 
 def main():
     # misc initialisations
     args = Arguments()
     ensure_dir_exists(conf.cache_dir)
-    update_bug_data(args.force_update, "%s/bugs/" % conf.cache_dir,
+    bugs_dir = "%s/bugs/" % conf.cache_dir
+    update_bug_data(args.force_update, bugs_dir,
                     args.full_name_bug_types, args.verbose)
     update_popcon_data(conf.cache_dir)
     debtags = Debtags()
-    popcon = Popcon(conf.cache_dir)
+    popcon_file = "%s/popcon/all-popcon-results.txt" % conf.cache_dir
+    assert os.path.isfile(popcon_file)
+    popcon = Popcon(open(popcon_file, "r"))
     Package.init_sources(debtags.tags_of_pkg, popcon.inst_of_pkg)
 
     # build dict of package objects, indexed by package name, using the HTML
     # BTS pages
     pkgs_by_name = {}
-    for bug_page in glob("%s/bugs/*.html" % conf.cache_dir):
+    for bug_page in glob("%s/*.html" % bugs_dir):
         bug_type = BugType.abbreviation_of(os.path.basename(bug_page).rstrip(".html"))
         if bug_type in args.bug_types:
             pkgs_by_name = extract_bugs(open(bug_page, "r"), pkgs_by_name, bug_type)
 
-    # filter packages using user-supplied tags
-    tag_db = StringIO("\n".join([str(pkg) for pkg in pkgs_by_name.itervalues()]))
-    matching_pkg_names = filter_pkgs(tag_db, args.match_tags, args.excl_tags)
-    pkg_objs = [pkgs_by_name[p] for p in matching_pkg_names.iter_packages()]
+    # FIXME mktemp is treated as if it does have tags
+    if args.show_untagged:
+        # select only packages without tags
+        pkg_objs = [p for p in pkgs_by_name.itervalues() if not p.tags]
+    else:
+        # filter packages using user-supplied tags
+        tag_db = StringIO("\n".join([str(p) for p in pkgs_by_name.itervalues()]))
+        matching_pkg_names = filter_pkgs(tag_db, args.match_tags, args.excl_tags)
+        pkg_objs = [pkgs_by_name[p] for p in matching_pkg_names.iter_packages()]
+        pkg_objs = [p for p in pkg_objs if p.tags]
+
     if args.verbose:
         nbugs = sum([len(p.bugs) for p in pkgs_by_name.itervalues()])
         print "loaded %d bugs in %s packages; query matches %d packages" \
