@@ -1,5 +1,22 @@
 #!/usr/bin/python
 
+# TagBugger - query WNPP bugs using the debtags of their packages
+# Copyright (C) 2009 Serafeim Zanikolas <serzan@hellug.gr>
+#
+# This program is free software; you can redistribute it and/or modify
+# it under the terms of the GNU General Public License as published by
+# the Free Software Foundation; either version 2 of the License, or
+# (at your option) any later version.
+#
+# This program is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# GNU General Public License for more details.
+#
+# You should have received a copy of the GNU General Public License
+# along with this program; if not, write to the Free Software
+# Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
+
 import os
 import sys
 from optparse import OptionParser
@@ -16,7 +33,8 @@ class Arguments:
     def __init__(self):
         usage = \
 """usage: %prog --match-tags t1,t2,... [--exclude-tags t3,t4,...]
-                     [-f] [-v] [-t RFA,O,...]"""
+                     [-t RFA,O,...] [-f] [-v]
+       %prog --untagged-pkgs-only [-f] [-v]"""
         parser = OptionParser(usage)
         parser.add_option("-m", "--match-tags", dest="match_tags",
                           help="""match packages having all these tags (not to
