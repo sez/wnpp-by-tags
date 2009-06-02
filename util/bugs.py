@@ -1,13 +1,12 @@
 import re
 import os
-import time
 
 from BeautifulSoup import BeautifulSoup
 
 from btsutils.debbugs import debbugs
 
 import conf
-from generic import HttpClient, create_file
+from generic import HttpClient, create_file, younger_than, warn, wget
 
 #bts_db = debbugs()
 
@@ -15,7 +14,7 @@ class BugType(object):
     to_abbn = { "help_requested" : "RFH",
                 "orphaned" : "O",
                 "rfa_bypackage" : "RFA",
-                "being_adopted" : "being adopted" }
+                "being_adopted" : "being_adopted" }
     to_name = { "RFH" : "help_requested",
                 "O" : "orphaned" ,
                 "RFA" : "rfa_bypackage",
@@ -46,7 +45,7 @@ class Bug(object):
 
 def update_bug_data(update_anyway, cache_dir, bug_types, verbose=False):
     """Download bug if what's available is too old.
-    
+
     ``update_anyway'' will download data regardless of how old they are
 
     ``cache_dir'' where to store the downloaded files
@@ -55,36 +54,22 @@ def update_bug_data(update_anyway, cache_dir, bug_types, verbose=False):
 
     """
     assert os.path.isdir(cache_dir)
-    # see which bug files have to be updated, if any
+    # see which bug files are missing or have to be updated, if any
     all_files = ["%s/%s.html" % (cache_dir, bt) for bt in bug_types]
     if update_anyway:
         files_to_update = all_files
     else:
-        now = time.time()
-        def file_is_ok(filename, min_age):
-            """True if file exists and isn't too old."""
-            return os.path.isfile(filename) and \
-                   now - os.stat(filename).st_mtime < min_age
         bugs_mtime_threshold = int(conf.bugs_update_period_in_days) * 86400
         files_to_update = [f for f in all_files \
-                if not file_is_ok(f, bugs_mtime_threshold)]
+                if not younger_than(f, bugs_mtime_threshold)]
 
         if not files_to_update:
             if verbose:
                 print "using previously downloaded bug data"
             return
 
-    # download whatever files are missing or are old
-    http_client = HttpClient("www.debian.org", verbose)
-    for filename in files_to_update:
-        url_suffix = os.path.basename(filename)
-        try:
-            bug_page = http_client.get(url_suffix)
-            create_file(filename, bug_page)
-        except Exception, e:
-            warn("failed to download ``%s'' bugs (%s)" % (filename, e))
-    http_client.close()
-
+    url_paths = ["/devel/wnpp/%s" % os.path.basename(f) for f in files_to_update]
+    wget("www.debian.org", url_paths, cache_dir, verbose)
 
 class Package(object):
     tags_of_pkg = lambda x: None

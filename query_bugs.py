@@ -10,7 +10,7 @@ import conf
 from util.generic import warn, giveup, ensure_dir_exists
 from util.bugs import extract_bugs, update_bug_data, Package, BugType
 from util.debtags import filter_pkgs, Debtags
-from util.popcon import Popcon, update_popcon_data
+from util.popcon import Popcon, update_popcon_data, POPCON_FNAME
 
 class Arguments:
     def __init__(self):
@@ -33,6 +33,9 @@ class Arguments:
                                   (by default,  bug data is updated when it's
                                   older than 7 days, and popcon data when it's
                                   older than 30 days)""")
+        parser.add_option("--cache-dir", dest="cache_dir",
+                          default=os.path.expanduser("~/.query-bugs"),
+                          help="directory where to cache bug and popcon data")
         parser.add_option("--debtags-file", dest="debtags_file",
                           default="/var/lib/debtags/package-tags",
                           help="""use an alternative debtags file
@@ -81,18 +84,21 @@ class Arguments:
         self.force_update = options.force_update
         self.verbose = options.verbose
         self.show_untagged = options.show_untagged
-        self.debtags_file = options.debtags_file
+        self.debtags_file = os.path.abspath(options.debtags_file)
+        self.cache_dir = os.path.abspath(options.cache_dir)
 
 def main():
     # misc initialisations
     args = Arguments()
-    ensure_dir_exists(conf.cache_dir)
-    bugs_dir = "%s/bugs/" % conf.cache_dir
+    bugs_dir = "%s/bugs" % args.cache_dir
+    popcon_dir = "%s/popcon" % args.cache_dir
+    ensure_dir_exists(bugs_dir)
+    ensure_dir_exists(popcon_dir)
     update_bug_data(args.force_update, bugs_dir,
                     args.full_name_bug_types, args.verbose)
-    update_popcon_data(conf.cache_dir)
+    update_popcon_data(args.force_update, popcon_dir, args.verbose)
     debtags = Debtags(args.debtags_file)
-    popcon_file = "%s/popcon/all-popcon-results.txt" % conf.cache_dir
+    popcon_file = "%s/%s" % (popcon_dir, POPCON_FNAME)
     assert os.path.isfile(popcon_file)
     popcon = Popcon(open(popcon_file, "r"))
     Package.init_sources(debtags.tags_of_pkg, popcon.inst_of_pkg)
@@ -123,7 +129,7 @@ def main():
     # print list of matching packages, along with bug number and popcon
     for pkg_obj in sorted(pkg_objs, reverse=True):
         for b in pkg_obj.bug_list():
-            print "%s: %s #%s (inst: %d)" % (b.type, pkg_obj.name, b.bug_no,
+            print "%s %s %s %d" % (b.type, b.bug_no, pkg_obj.name,
                                              pkg_obj.popcon)
 
 if __name__ == '__main__':

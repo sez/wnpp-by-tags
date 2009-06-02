@@ -1,4 +1,3 @@
-cache_dir = "/home/sez/fun/debian/participation/cache"
 bugs_update_period_in_days = 7
 popcon_update_period_in_days = 30
 # consider packages that are "being adopted" for at least this many days
@@ -11,4 +10,3 @@ not_in_archive = ["being_packaged", "requested"]
 known_bug_types = set(in_archive)
 known_bug_types.update(set(not_in_archive))
 bug_types_to_query = in_archive
-
