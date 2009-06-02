@@ -35,3 +35,15 @@ def filter_pkgs(tag_db_fd, match_tags, excl_tags):
     db.read(tag_db_fd)
     select = gen_filter(match_tags, excl_tags)
     return db.filter_packages_tags(lambda x: select(x[1]))
+
+class TagVocabulary(object):
+    def __init__(self, tagfile, verbose=False):
+        self.tagfile = tagfile
+        self.tags = set([line.lstrip("Tag: ").rstrip("\n") \
+                         for line in open(tagfile) \
+                         if line.startswith("Tag: ")])
+        assert self.tags
+        if verbose:
+            print "using vocabulary of %s tags" % len(self.tags)
+    def invalid_tags(self, tags):
+        return set(tags) - self.tags

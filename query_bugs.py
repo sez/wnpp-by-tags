@@ -9,7 +9,7 @@ from glob import glob
 import conf
 from util.generic import warn, giveup, ensure_dir_exists
 from util.bugs import extract_bugs, update_bug_data, Package, BugType
-from util.debtags import filter_pkgs, Debtags
+from util.debtags import filter_pkgs, Debtags, TagVocabulary
 from util.popcon import Popcon, update_popcon_data, POPCON_FNAME
 
 class Arguments:
@@ -27,6 +27,10 @@ class Arguments:
                           help="""query only against bugs of the types in this
                           comma-separated list (valid types: any, O, RFA, RFH,
                           ITP, being_adopted; default: any)""")
+        parser.add_option("-u", "--untagged-pkgs-only", action="store_true",
+                          dest="show_untagged",
+                          help="""list only bugs for packages that haven't
+                          been tagged yet (not to be used with -m)""")
         parser.add_option("-f", "--force-update", action="store_true",
                           dest="force_update", default=False,
                           help="""update bug and popcon data regardless of age
@@ -40,10 +44,11 @@ class Arguments:
                           default="/var/lib/debtags/package-tags",
                           help="""use an alternative debtags file
                           (default: /var/lib/debtags/package-tags)""")
-        parser.add_option("-u", "--untagged-pkgs-only", action="store_true",
-                          dest="show_untagged",
-                          help="""list only bugs for packages that haven't
-                          been tagged yet (not to be used with -m)""")
+        parser.add_option("--vocabulary-file", dest="tags_file",
+                          default="/var/lib/debtags/vocabulary",
+                          help="""user-supplied tags for filtering are checked
+                          against this tag file (default:
+                          /var/lib/debtags/vocabulary)""")
         parser.add_option("-v", "--verbose", action="store_true",
                           dest="verbose", default=False)
         (options, args) = parser.parse_args()
@@ -86,10 +91,19 @@ class Arguments:
         self.show_untagged = options.show_untagged
         self.debtags_file = os.path.abspath(options.debtags_file)
         self.cache_dir = os.path.abspath(options.cache_dir)
+        self.tags_file = options.tags_file
 
 def main():
-    # misc initialisations
+    # parse user-supplied arguments
     args = Arguments()
+    # sanity check
+    vocabulary = TagVocabulary(args.tags_file)
+    invalid_tags = vocabulary.invalid_tags(args.match_tags.union(args.excl_tags))
+    if invalid_tags:
+        giveup("The following tags are not listed in %s:\n%s" % \
+                (args.tags_file, "\n".join(list(invalid_tags))))
+
+    # misc initialisations
     bugs_dir = "%s/bugs" % args.cache_dir
     popcon_dir = "%s/popcon" % args.cache_dir
     ensure_dir_exists(bugs_dir)
