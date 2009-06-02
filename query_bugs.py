@@ -30,6 +30,7 @@ from util.debtags import filter_pkgs, Debtags, TagVocabulary
 from util.popcon import Popcon, update_popcon_data, POPCON_FNAME
 
 class Arguments:
+    """Class to parse, check and encapsulate command-line argument values."""
     def __init__(self):
         usage = \
 """usage: %prog --match-tags t1,t2,... [--exclude-tags t3,t4,...]
@@ -160,8 +161,8 @@ def main():
 
     # print list of matching packages, along with bug number and popcon
     for pkg_obj in sorted(pkg_objs, reverse=True):
-        for b in pkg_obj.bug_list():
-            print "%s %s %s %d" % (b.type, b.bug_no, pkg_obj.name,
+        for bug in pkg_obj.bug_list():
+            print "%s %s %s %d" % (bug.type, bug.bug_no, pkg_obj.name,
                                              pkg_obj.popcon)
 
 if __name__ == '__main__':
