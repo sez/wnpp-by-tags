@@ -29,6 +29,11 @@ from util.bugs import extract_bugs, update_bug_data, Package, BugType
 from util.debtags import filter_pkgs, Debtags, TagVocabulary
 from util.popcon import Popcon, update_popcon_data, POPCON_FNAME
 
+__author__ = "Serafeim Zanikolas <serzan@hellug.gr>"
+__version__ = "0.1"
+__copyright__ = "Copyright (c) 2009 Serafeim Zanikolas"
+__license__ = "GPL-2+"
+
 class Arguments:
     """Class to parse, check and encapsulate command-line argument values."""
     def __init__(self):
@@ -70,9 +75,15 @@ class Arguments:
                           /var/lib/debtags/vocabulary)""")
         parser.add_option("-v", "--verbose", action="store_true",
                           dest="verbose", default=False)
+        parser.add_option("-V", "--version", action="store_true",
+                          dest="show_version", default=False,
+                          help="show version information")
         (options, args) = parser.parse_args()
         if len(args) > 0:
             parser.error("Unknown argument %s")
+        if options.show_version:
+            print "TagBugger version %s" % __version__
+            exit(0)
         if not options.match_tags and not options.show_untagged:
             parser.error("You must specify at least either -m or -u")
             exit(1)
