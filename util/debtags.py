@@ -58,9 +58,12 @@ class TagVocabulary(object):
         self.tagfile = tagfile
         self.tags = set([line.lstrip("Tag: ").rstrip("\n") \
                          for line in open(tagfile) \
-                         if line.startswith("Tag: ")])
+                         if line.startswith("Tag: ") and \
+                         'not-yet-tagged' not in line])
         assert self.tags
         if verbose:
             print "using vocabulary of %s tags" % len(self.tags)
     def invalid_tags(self, tags):
         return set(tags) - self.tags
+    def __str__(self):
+        return "\n".join(sorted(list(self.tags)))

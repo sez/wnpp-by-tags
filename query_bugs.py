@@ -40,17 +40,22 @@ class Arguments:
         usage = \
 """usage: %prog --match-tags t1,t2,... [--exclude-tags t3,t4,...]
                      [-t RFA,O,...] [-f] [-v]
-       %prog --untagged-pkgs-only [-f] [-v]"""
+       %prog --untagged-pkgs-only
+       %prog --list-valid-tags"""
         parser = OptionParser(usage)
         parser.add_option("-m", "--match-tags", dest="match_tags",
-                          help="""match packages having all these tags (not to
-                          be used with -u)""")
+                          help="""match packages having all these tags
+                          (comma-separated list; not to be used with -u)""")
         parser.add_option("-x", "--exclude-tags", dest="excl_tags",
-                          help="filter out packages having any of these tags")
+                          help="""filter out packages having any of these tags
+                          (comma-separated list)""")
         parser.add_option("-t", "--bug-types", dest="bug_types", default="any",
                           help="""query only against bugs of the types in this
                           comma-separated list (valid types: any, O, RFA, RFH,
                           ITP, being_adopted; default: any)""")
+        parser.add_option("-l", "--list-valid-tags", action="store_true",
+                          dest="list_tags", help="""use this if you don't know
+                          what you query for""")
         parser.add_option("-u", "--untagged-pkgs-only", action="store_true",
                           dest="show_untagged",
                           help="""list only bugs for packages that haven't
@@ -82,22 +87,20 @@ class Arguments:
         if len(args) > 0:
             parser.error("Unknown argument %s")
         if options.show_version:
-            print "TagBugger version %s" % __version__
+            print "TagBugger %s" % __version__
             exit(0)
-        if not options.match_tags and not options.show_untagged:
-            parser.error("You must specify at least either -m or -u")
-            exit(1)
-        if options.match_tags and options.show_untagged:
-            parser.error("You must either -m or -u")
-            exit(1)
+        options.match_tags or options.show_untagged or options.list_tags or \
+            parser.error("Please specify at least either -m, -u or -l")
+        options.match_tags and options.show_untagged and \
+            parser.error("Please specify either -m or -u")
 
+        self.match_tags = set()
+        self.excl_tags = set()
         if options.match_tags:
             # parse tags to match and tags to exclude
             self.match_tags = set(options.match_tags.split(","))
             if options.excl_tags:
                 self.excl_tags = set(options.excl_tags.split(","))
-            else:
-                self.excl_tags = set()
 
         if options.bug_types == "any":
             # query against default bug types
@@ -118,6 +121,7 @@ class Arguments:
 
         self.force_update = options.force_update
         self.verbose = options.verbose
+        self.list_tags = options.list_tags
         self.show_untagged = options.show_untagged
         self.debtags_file = os.path.abspath(options.debtags_file)
         self.cache_dir = os.path.abspath(options.cache_dir)
@@ -127,11 +131,15 @@ def main():
     # parse user-supplied arguments
     args = Arguments()
     # sanity check
-    vocabulary = TagVocabulary(args.tags_file)
-    invalid_tags = vocabulary.invalid_tags(args.match_tags.union(args.excl_tags))
-    if invalid_tags:
-        giveup("The following tags are not listed in %s:\n%s" % \
-                (args.tags_file, "\n".join(list(invalid_tags))))
+    if args.match_tags or args.list_tags:
+        vocabulary = TagVocabulary(args.tags_file)
+        if args.list_tags:
+            print vocabulary
+            exit(0)
+        invalid_tags = vocabulary.invalid_tags(args.match_tags.union(args.excl_tags))
+        if invalid_tags:
+            giveup("The following tags are not listed in %s:\n%s" % \
+                    (args.tags_file, "\n".join(list(invalid_tags))))
 
     # misc initialisations
     bugs_dir = "%s/bugs" % args.cache_dir
