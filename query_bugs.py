@@ -40,8 +40,8 @@ class Arguments:
         usage = \
 """usage: %prog --match-tags t1,t2,... [--exclude-tags t3,t4,...]
                      [-t RFA,O,...] [-f] [-v]
-       %prog --untagged-pkgs-only
-       %prog --list-valid-tags"""
+       %prog --list-valid-tags
+       %prog --untagged-pkgs-only"""
         parser = OptionParser(usage)
         parser.add_option("-m", "--match-tags", dest="match_tags",
                           help="""match packages having all these tags
@@ -130,7 +130,12 @@ class Arguments:
 def main():
     # parse user-supplied arguments
     args = Arguments()
-    # sanity check
+    # sanity checks
+    if not os.path.exists(args.debtags_file):
+        giveup("The debtags file %s doesn't exist" % args.debtags_file)
+    if not os.path.exists(args.tags_file):
+        giveup("The tag vocabulary file %s doesn't exist" % args.tags_file)
+
     if args.match_tags or args.list_tags:
         vocabulary = TagVocabulary(args.tags_file)
         if args.list_tags:
@@ -149,7 +154,7 @@ def main():
     update_bug_data(args.force_update, bugs_dir,
                     args.full_name_bug_types, args.verbose)
     update_popcon_data(args.force_update, popcon_dir, args.verbose)
-    debtags = Debtags(args.debtags_file)
+    debtags = Debtags(open(args.debtags_file))
     popcon_file = "%s/%s" % (popcon_dir, POPCON_FNAME)
     assert os.path.isfile(popcon_file)
     popcon = Popcon(open(popcon_file, "r"))

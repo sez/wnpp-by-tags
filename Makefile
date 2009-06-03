@@ -8,7 +8,7 @@ view-man: manual
 manual: tagbugger.1
 
 tagbugger.1: query_bugs.py synopsis.txt
-	@help2man -i synopsis.txt -N ./query_bugs.py  >tagbugger.1
+	@help2man -i synopsis.txt -N ./query_bugs.py | sed -e '12,16d' >tagbugger.1
 
 clean:
 	@find . -type f -name "*.pyc" -delete

@@ -24,9 +24,7 @@ class Debtags(object):
     tagdb_filename='/var/lib/debtags/package-tags'
     def __init__(self, tagdb=None):
         if not tagdb:
-            tagdb = Debtags.tagdb_filename
-        assert os.path.exists(tagdb)
-        tagdb = open(tagdb)
+            tagdb = open(Debtags.tagdb_filename)
         self.db = debtags.DB()
         self.db.read(tagdb)
         tagdb.close()
