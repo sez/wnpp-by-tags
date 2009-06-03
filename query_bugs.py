@@ -45,7 +45,7 @@ class Arguments:
         parser = OptionParser(usage)
         parser.add_option("-m", "--match-tags", dest="match_tags",
                           help="""match packages having all these tags
-                          (comma-separated list; not to be used with -u)""")
+                          (comma-separated list; not to be used with -l or -u)""")
         parser.add_option("-x", "--exclude-tags", dest="excl_tags",
                           help="""filter out packages having any of these tags
                           (comma-separated list)""")
@@ -55,11 +55,11 @@ class Arguments:
                           ITP, being_adopted; default: any)""")
         parser.add_option("-l", "--list-valid-tags", action="store_true",
                           dest="list_tags", help="""use this if you don't know
-                          what you query for""")
+                          what to query for (not to be used with -m or -u)""")
         parser.add_option("-u", "--untagged-pkgs-only", action="store_true",
                           dest="show_untagged",
                           help="""list only bugs for packages that haven't
-                          been tagged yet (not to be used with -m)""")
+                          been tagged yet (not to be used with -m or -l)""")
         parser.add_option("-f", "--force-update", action="store_true",
                           dest="force_update", default=False,
                           help="""update bug and popcon data regardless of age
