@@ -68,7 +68,7 @@ class HttpClient(object):
 def younger_than(filename, max_age):
     """True if the specified file exists and is younger than "age".
 
-    ``filename'' file to test
+    ``filename'' file to check
 
     ``max_age'' in seconds
     """
