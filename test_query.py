@@ -26,7 +26,7 @@ from test_query_data import orphaned_raw_data, rfa_raw_data, \
     popcon_raw_data
 
 def setup_cache():
-    cache_dir = mkdtemp("query-bugs")
+    cache_dir = mkdtemp(prefix="query-bugs")
     bugs_dir = "%s/bugs/" % cache_dir
     os.makedirs(bugs_dir)
     os.makedirs("%s/popcon" % cache_dir)
