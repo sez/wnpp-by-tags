@@ -21,7 +21,7 @@ import os
 from BeautifulSoup import BeautifulSoup
 
 import conf
-from generic import HttpClient, create_file, younger_than, warn, wget
+from util import create_file, younger_than, warn, wget
 
 
 class BugType(object):

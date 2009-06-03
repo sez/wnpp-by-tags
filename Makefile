@@ -1,4 +1,4 @@
-TESTS = test_query.py util/test_debtags.py util/test_popcon.py
+TESTS = test_query.py lib/test_debtags.py lib/test_popcon.py
 
 all: manual
 

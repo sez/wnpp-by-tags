@@ -17,7 +17,7 @@
 
 import os
 
-from generic import remove_space_dups, warn, wget, decompress_gzip, younger_than
+from util import remove_space_dups, warn, wget, decompress_gzip, younger_than
 
 POPCON_FNAME = "all-popcon-results.txt"
 

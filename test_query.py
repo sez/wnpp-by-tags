@@ -21,7 +21,7 @@ from tempfile import mkdtemp
 import unittest
 import os
 
-from util.generic import create_file, warn
+from lib.util import create_file, warn
 from test_query_data import orphaned_raw_data, rfa_raw_data, \
     popcon_raw_data
 

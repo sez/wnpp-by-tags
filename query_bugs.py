@@ -24,10 +24,10 @@ from StringIO import StringIO
 from glob import glob
 
 import conf
-from util.generic import warn, giveup, ensure_dir_exists
-from util.bugs import extract_bugs, update_bug_data, Package, BugType
-from util.debtags import filter_pkgs, Debtags, TagVocabulary
-from util.popcon import Popcon, update_popcon_data, POPCON_FNAME
+from lib.util import warn, giveup, ensure_dir_exists
+from lib.bugs import extract_bugs, update_bug_data, Package, BugType
+from lib.debtags import filter_pkgs, Debtags, TagVocabulary
+from lib.popcon import Popcon, update_popcon_data, POPCON_FNAME
 
 __author__ = "Serafeim Zanikolas <serzan@hellug.gr>"
 __version__ = "0.1"
