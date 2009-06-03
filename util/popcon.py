@@ -17,7 +17,6 @@
 
 import os
 
-import conf
 from generic import remove_space_dups, warn, wget, decompress_gzip, younger_than
 
 POPCON_FNAME = "all-popcon-results.txt"
@@ -40,6 +39,7 @@ class Popcon(object):
             return 0
 
 def update_popcon_data(update_anyway, cache_dir, verbose=False):
+    import conf
     filename = "%s/%s" % (cache_dir, POPCON_FNAME)
     max_age = int(conf.popcon_update_period_in_days) * 86400
     if update_anyway or not younger_than(filename, max_age):

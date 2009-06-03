@@ -68,9 +68,11 @@ if __name__ == "__main__":
         unittest.main()
     except Exception, e:
         print e
-    # wipe cache directory
-    try:
-        [os.remove.path(f) for f in glob("%s/*/*" % cache_dir)]
-        os.removedirs(QueryTest.cache_dir)
-    except Exception, e:
-        warn("error while trying to remove '%s'" % cache_dir)
+    finally:
+        # wipe cache directory
+        try:
+            [os.remove(f) for f in glob("%s/*/*" % cache_dir)]
+            os.rmdir("%s/popcon" % cache_dir)
+            os.removedirs("%s/bugs" % cache_dir)
+        except Exception, e:
+            warn("error while trying to remove '%s':\n\t%s" % (cache_dir, e))
