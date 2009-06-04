@@ -189,8 +189,8 @@ def main():
     # print list of matching packages, along with bug number and popcon
     for pkg_obj in sorted(pkg_objs, reverse=True):
         for bug in pkg_obj.bug_list():
-            print "%s %s %s %d" % (bug.type, bug.bug_no, pkg_obj.name,
-                                             pkg_obj.popcon)
+            print "%s %s %s %d %s" % (bug.type, bug.bug_no, pkg_obj.name,
+                                             pkg_obj.popcon, bug.dust)
 
 if __name__ == '__main__':
     main()

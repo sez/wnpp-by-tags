@@ -5,16 +5,22 @@ usage: \fBwnpp-by-tags\fR \fI--match-tags t1,t2,\fR... [\fI--exclude-tags t3,t4\
        \fBwnpp-by-tags\fR \fI--untagged-pkgs-only\fR
 
 [description]
-Find WNPP bugs about packages that have specific tags.
+List WNPP bugs about packages that have specific tags, ordered by the number
+of installations reported by popcon. If applicable, also indicate the bug's
+"dust" (ie, since when the bug was submitted, or altered).
+
+By default, wnpp-by-tags searches against the following kinds of bugs:
+orphaned (O), help requested (RFH), being adopted, and request for adoption
+(RFA).
 
 [configuration file]
 Some options can be overriden in ~/.wnpptagsrc:
 
-* bugs_update_period_in_days: keep downloaded bug data for this many days before re-downloading them (default: 30)
+* bugs_update_period_in_days: keep bug data for this many days before re-downloading them (default: 30)
 
 * popcon_update_period_in_days: similarly for popcon data (default: 7)
 
-* being_adopted_threshold_in_days: consider packages that are "being adopted" for at least this many days as not actually being adopted
+* being_adopted_threshold_in_days: consider packages that are "being adopted" for at least this many days as not actually being adopted (default: 150)
 
 * known_bug_types: comma-separated list of supported bug types
 
@@ -29,6 +35,7 @@ $HOME/.wnpptagsrc
 /var/lib/debtags/vocabulary
 
 [see also]
+rc-alert(1)
 wnpp-alert(1)
 debtags(1)
 

@@ -47,11 +47,12 @@ class BugType(object):
 
 
 class Bug(object):
-    def __init__(self, bug_no, title=None, type=None):
+    def __init__(self, bug_no, title=None, type=None, dust=None):
         # add bug title
         self.bug_no = bug_no
         self.title = title
         self.type = type
+        self.dust = dust if dust else ""
     def get_bug_title(self):
         if self.title is None:
             pass # TODO: get it from bts
@@ -139,16 +140,22 @@ def extract_bugs(html_page_handle, pkgs_by_name, bug_type):
     container_div = soup.find('div', id='inner')
     links = container_div.findChildren('a',
             href=re.compile('http:\/\/bugs.debian.org\/[0-9]+'))
+    days_pat = re.compile(" ([0-9]+) days ")
     assert links
     for link in links:
         bug_url = link['href']
         pkgname = link.string.split(":")[0]
         bug_no = bug_url.split("/")[-1]
+        # parse the number of days since the pkg is being
+        # adopted/packaged/RFH'd; we call this period dust
+        days_part = str(link.parent).split(",")[-1]
+        match = days_pat.search(days_part)
+        dust = match.group(1) if match else None
 
         pkg_obj = pkgs_by_name.get(pkgname)
         if pkg_obj is None:
             pkg_obj = Package(pkgname)
             pkgs_by_name[pkgname] = pkg_obj
-        pkg_obj.add_bug(Bug(bug_no, pkgname, bug_type))
+        pkg_obj.add_bug(Bug(bug_no, pkgname, bug_type, dust))
 
     return pkgs_by_name
