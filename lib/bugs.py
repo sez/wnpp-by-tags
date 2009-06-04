@@ -20,9 +20,8 @@ import os
 
 from BeautifulSoup import BeautifulSoup
 
-import conf
+from lib.config import Config
 from util import create_file, younger_than, warn, wget
-
 
 class BugType(object):
     to_abbn = { "help_requested" : "RFH",
@@ -57,7 +56,8 @@ class Bug(object):
         if self.title is None:
             pass # TODO: get it from bts
 
-def update_bug_data(update_anyway, cache_dir, bug_types, verbose=False):
+def update_bug_data(update_anyway, cache_dir, bug_types,
+        bugs_update_period_in_days, verbose=False):
     """Download bug if what's available is too old.
 
     ``update_anyway'' will download data regardless of how old they are
@@ -66,6 +66,11 @@ def update_bug_data(update_anyway, cache_dir, bug_types, verbose=False):
 
     ``bug_types'' what bug types to download data for (full names)
 
+    ``bugs_update_period_in_days'' update bug data if the previously
+        downloaded data is older than this period
+
+    ``verbose'' whether to print diagnostic messages
+
     """
     assert os.path.isdir(cache_dir)
     # see which bug files are missing or have to be updated, if any
@@ -73,7 +78,7 @@ def update_bug_data(update_anyway, cache_dir, bug_types, verbose=False):
     if update_anyway:
         files_to_update = all_files
     else:
-        bugs_mtime_threshold = int(conf.bugs_update_period_in_days) * 86400
+        bugs_mtime_threshold = bugs_update_period_in_days * 86400
         files_to_update = [f for f in all_files \
                 if not younger_than(f, bugs_mtime_threshold)]
 

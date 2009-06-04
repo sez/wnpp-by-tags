@@ -23,7 +23,7 @@ from optparse import OptionParser
 from StringIO import StringIO
 from glob import glob
 
-import conf
+from lib.config import Config
 from lib.util import warn, giveup, ensure_dir_exists
 from lib.bugs import extract_bugs, update_bug_data, Package, BugType
 from lib.debtags import filter_pkgs, Debtags, TagVocabulary
@@ -34,9 +34,11 @@ __version__ = "0.1"
 __copyright__ = "Copyright (c) 2009 Serafeim Zanikolas"
 __license__ = "GPL-2+"
 
+
 class Arguments:
     """Class to parse, check and encapsulate command-line argument values."""
     def __init__(self):
+        self.conf = Config()
         usage = \
 """usage: %prog --match-tags t1,t2,... [--exclude-tags t3,t4,...]
                      [-t RFA,O,...] [-f] [-v]
@@ -104,7 +106,7 @@ class Arguments:
 
         if options.bug_types == "any":
             # query against default bug types
-            self.full_name_bug_types = conf.bug_types_to_query
+            self.full_name_bug_types = self.conf.bug_types_to_query
             self.bug_types = [BugType.abbreviation_of(bt) \
                               for bt in self.full_name_bug_types]
         else:
@@ -113,7 +115,7 @@ class Arguments:
                               for b in options.bug_types.split(",")]
             # check that the user-supplied bug types are valid
             self.full_name_bug_types = [BugType.full_name_of(bt) for bt in self.bug_types]
-            invalid_bug_types = set(self.full_name_bug_types).difference(conf.known_bug_types)
+            invalid_bug_types = set(self.full_name_bug_types).difference(self.conf.known_bug_types)
             if invalid_bug_types:
                 giveup("invalid  bug type(s): %s" % ", ".join(list(invalid_bug_types)))
             self.bug_types = [BugType.abbreviation_of(bt) for bt in self.bug_types]
@@ -151,9 +153,10 @@ def main():
     popcon_dir = "%s/popcon" % args.cache_dir
     ensure_dir_exists(bugs_dir)
     ensure_dir_exists(popcon_dir)
-    update_bug_data(args.force_update, bugs_dir,
-                    args.full_name_bug_types, args.verbose)
-    update_popcon_data(args.force_update, popcon_dir, args.verbose)
+    update_bug_data(args.force_update, bugs_dir, args.full_name_bug_types,
+            args.conf.bugs_update_period_in_days, args.verbose)
+    update_popcon_data(args.force_update, popcon_dir,
+            args.conf.popcon_update_period_in_days, args.verbose)
     debtags = Debtags(open(args.debtags_file))
     popcon_file = "%s/%s" % (popcon_dir, POPCON_FNAME)
     assert os.path.isfile(popcon_file)
