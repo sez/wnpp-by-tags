@@ -1,6 +1,6 @@
 #!/usr/bin/python
 
-# TagBugger - query WNPP bugs using the debtags of their packages
+# wnpp-by-tags - query WNPP bugs using the debtags of their packages
 # Copyright (C) 2009 Serafeim Zanikolas <serzan@hellug.gr>
 #
 # This program is free software; you can redistribute it and/or modify
@@ -87,7 +87,7 @@ class Arguments:
         if len(args) > 0:
             parser.error("Unknown argument %s")
         if options.show_version:
-            print "TagBugger %s" % __version__
+            print "wnpp-by-tags %s" % __version__
             exit(0)
         options.match_tags or options.show_untagged or options.list_tags or \
             parser.error("Please specify at least either -m, -u or -l")

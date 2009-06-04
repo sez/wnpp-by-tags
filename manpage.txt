@@ -1,8 +1,8 @@
 [synopsis]
-usage: \fBTagBugger\fR \fI--match-tags t1,t2,\fR... [\fI--exclude-tags t3,t4\fR,...]
+usage: \fBwnpp-by-tags\fR \fI--match-tags t1,t2,\fR... [\fI--exclude-tags t3,t4\fR,...]
                      [\fI-t RFA,O\fR,...] [\fI-f\fR] [\fI-v\fR]
-       \fBTagBugger\fR \fI--list-valid-tags\fR
-       \fBTagBugger\fR \fI--untagged-pkgs-only\fR
+       \fBwnpp-by-tags\fR \fI--list-valid-tags\fR
+       \fBwnpp-by-tags\fR \fI--untagged-pkgs-only\fR
 
 [description]
 Find WNPP bugs about packages that have specific tags.
@@ -15,4 +15,4 @@ Some options can be overriden in the user configuration file ~/.tagbugrc:
 wnpp-alert(1)
 
 [author]
-\fBTagBugger\fR was written by Serafeim Zanikolas <serzan@hellug.gr>
+\fBwnpp-by-tags\fR was written by Serafeim Zanikolas <serzan@hellug.gr>

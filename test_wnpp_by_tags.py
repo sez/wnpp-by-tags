@@ -1,4 +1,4 @@
-# TagBugger - query WNPP bugs using the debtags of their packages
+# wnpp-by-tags - query WNPP bugs using the debtags of their packages
 # Copyright (C) 2009 Serafeim Zanikolas <serzan@hellug.gr>
 #
 # This program is free software; you can redistribute it and/or modify
@@ -22,7 +22,7 @@ import unittest
 import os
 
 from lib.util import create_file, warn
-from test_query_data import orphaned_raw_data, rfa_raw_data, \
+from test_data import orphaned_raw_data, rfa_raw_data, \
     popcon_raw_data
 
 def setup_cache():
@@ -44,7 +44,7 @@ def run(cmd):
 
 class QueryTest(unittest.TestCase):
     prog = None
-    prog = "./query_bugs.py --cache-dir %s" % cache_dir
+    prog = "./wnpp_by_tags.py --cache-dir %s" % cache_dir
     def testTagMatching1(self):
         expected_result = "RFA 447393 bins 29\nO 503554 a2ps-perl-ja 28"
         status, output = run("%s -t o,rfa -m implemented-in::perl" % QueryTest.prog)

@@ -1,4 +1,4 @@
-# TagBugger - query WNPP bugs using the debtags of their packages
+# wnpp-by-tags - query WNPP bugs using the debtags of their packages
 # Copyright (C) 2009 Serafeim Zanikolas <serzan@hellug.gr>
 #
 # This program is free software; you can redistribute it and/or modify
