@@ -27,11 +27,11 @@ class BugType(object):
     to_abbn = { "help_requested" : "RFH",
                 "orphaned" : "O",
                 "rfa_bypackage" : "RFA",
-                "being_adopted" : "being_adopted" }
+                "being_adopted" : "BA" }
     to_name = { "RFH" : "help_requested",
                 "O" : "orphaned" ,
                 "RFA" : "rfa_bypackage",
-                "being adopted" : "being_adopted" }
+                "BA" : "being_adopted" }
     def full_name_of(t):
         try:
             return BugType.to_name[t]
@@ -140,17 +140,17 @@ def extract_bugs(html_page_handle, pkgs_by_name, bug_type):
     container_div = soup.find('div', id='inner')
     links = container_div.findChildren('a',
             href=re.compile('http:\/\/bugs.debian.org\/[0-9]+'))
-    days_pat = re.compile(" ([0-9]+) days ")
+    days_pat = re.compile("[^\d]([0-9]+) days ")
     assert links
     for link in links:
         bug_url = link['href']
         pkgname = link.string.split(":")[0]
         bug_no = bug_url.split("/")[-1]
-        # parse the number of days since the pkg is being
-        # adopted/packaged/RFH'd; we call this period dust
+        # how dusty is this bug? ie how many days since the pkg latest status
+        # change?
         days_part = str(link.parent).split(",")[-1]
         match = days_pat.search(days_part)
-        dust = match.group(1) if match else None
+        dust = int(match.group(1)) if match else None
 
         pkg_obj = pkgs_by_name.get(pkgname)
         if pkg_obj is None:

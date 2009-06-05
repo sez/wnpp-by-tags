@@ -99,7 +99,7 @@ def decompress_gzip(gz_filename, uncompressed_filename=None):
     assert os.path.isfile(gz_filename)
     if uncompressed_filename is None:
         assert gz_filename.endswith(".gz")
-        uncompressed_filename = gz_filename.rstrip(".gz")
+        uncompressed_filename = gz_filename[:-3]
     gz = gzip.GzipFile(gz_filename, "r")
     create_file(uncompressed_filename, gz.read())
     gz.close()

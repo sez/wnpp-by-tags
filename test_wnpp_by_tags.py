@@ -26,8 +26,8 @@ from test_data import orphaned_raw_data, rfa_raw_data, \
     popcon_raw_data
 
 def setup_cache():
-    cache_dir = mkdtemp(prefix="query-bugs")
-    bugs_dir = "%s/bugs/" % cache_dir
+    cache_dir = mkdtemp(prefix="wnpp-by-tags")
+    bugs_dir = "%s/wnpp/" % cache_dir
     os.makedirs(bugs_dir)
     os.makedirs("%s/popcon" % cache_dir)
     create_file("%s/orphaned.html" % bugs_dir, orphaned_raw_data)
@@ -73,6 +73,6 @@ if __name__ == "__main__":
         try:
             [os.remove(f) for f in glob("%s/*/*" % cache_dir)]
             os.rmdir("%s/popcon" % cache_dir)
-            os.removedirs("%s/bugs" % cache_dir)
+            os.removedirs("%s/wnpp" % cache_dir)
         except Exception, e:
             warn("error while trying to remove '%s':\n\t%s" % (cache_dir, e))

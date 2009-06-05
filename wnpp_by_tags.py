@@ -69,8 +69,9 @@ class Arguments:
                                   older than 7 days, and popcon data when it's
                                   older than 30 days)""")
         parser.add_option("--cache-dir", dest="cache_dir",
-                          default=os.path.expanduser("~/.query-bugs"),
-                          help="directory where to cache bug and popcon data")
+                          default=os.path.expanduser("~/.devscripts_cache"),
+                          help="""cache directory for bug and popcon data
+                          (default: ~/.devscripts_cache""")
         parser.add_option("--debtags-file", dest="debtags_file",
                           default="/var/lib/debtags/package-tags",
                           help="""use an alternative debtags file
@@ -149,7 +150,7 @@ def main():
                     (args.tags_file, "\n".join(list(invalid_tags))))
 
     # misc initialisations
-    bugs_dir = "%s/bugs" % args.cache_dir
+    bugs_dir = "%s/wnpp" % args.cache_dir
     popcon_dir = "%s/popcon" % args.cache_dir
     ensure_dir_exists(bugs_dir)
     ensure_dir_exists(popcon_dir)
@@ -167,7 +168,7 @@ def main():
     # BTS pages
     pkgs_by_name = {}
     for bug_page in glob("%s/*.html" % bugs_dir):
-        bug_type = BugType.abbreviation_of(os.path.basename(bug_page).rstrip(".html"))
+        bug_type = BugType.abbreviation_of(os.path.basename(bug_page)[:-5])
         if bug_type in args.bug_types:
             pkgs_by_name = extract_bugs(open(bug_page, "r"), pkgs_by_name, bug_type)
 
@@ -189,6 +190,9 @@ def main():
     # print list of matching packages, along with bug number and popcon
     for pkg_obj in sorted(pkg_objs, reverse=True):
         for bug in pkg_obj.bug_list():
+            if bug.type == 'BA' and \
+               bug.dust < args.conf.being_adopted_threshold_in_days:
+                   continue
             print "%s %s %s %d %s" % (bug.type, bug.bug_no, pkg_obj.name,
                                              pkg_obj.popcon, bug.dust)
 

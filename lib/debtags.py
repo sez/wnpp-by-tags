@@ -54,7 +54,7 @@ def filter_pkgs(tag_db_fd, match_tags, excl_tags):
 class TagVocabulary(object):
     def __init__(self, tagfile, verbose=False):
         self.tagfile = tagfile
-        self.tags = set([line.lstrip("Tag: ").rstrip("\n") \
+        self.tags = set([line[5:].rstrip("\n") \
                          for line in open(tagfile) \
                          if line.startswith("Tag: ") and \
                          'not-yet-tagged' not in line])
