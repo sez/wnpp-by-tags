@@ -17,6 +17,7 @@
 
 from commands import getstatusoutput
 from glob import glob
+from shutil import rmtree
 from tempfile import mkdtemp
 import unittest
 import os
@@ -71,8 +72,6 @@ if __name__ == "__main__":
     finally:
         # wipe cache directory
         try:
-            [os.remove(f) for f in glob("%s/*/*" % cache_dir)]
-            os.rmdir("%s/popcon" % cache_dir)
-            os.removedirs("%s/wnpp" % cache_dir)
+            rmtree(cache_dir)
         except Exception, e:
             warn("error while trying to remove '%s':\n\t%s" % (cache_dir, e))
