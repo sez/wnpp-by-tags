@@ -47,12 +47,12 @@ class BugType(object):
 
 
 class Bug(object):
-    def __init__(self, bug_no, title=None, type=None, dust=None):
+    def __init__(self, bug_no, title=None, type=None, dust="n/a"):
         # add bug title
         self.bug_no = bug_no
         self.title = title
         self.type = type
-        self.dust = dust if dust else ""
+        self.dust = dust
     def get_bug_title(self):
         if self.title is None:
             pass # TODO: get it from bts
@@ -150,7 +150,7 @@ def extract_bugs(html_page_handle, pkgs_by_name, bug_type):
         # change?
         days_part = str(link.parent).split(",")[-1]
         match = days_pat.search(days_part)
-        dust = int(match.group(1)) if match else None
+        dust = int(match.group(1)) if match else "n/a"
 
         pkg_obj = pkgs_by_name.get(pkgname)
         if pkg_obj is None:

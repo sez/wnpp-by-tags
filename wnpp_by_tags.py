@@ -107,9 +107,13 @@ class Arguments:
         if options.batch_qfile or options.batch_dir:
             options.batch_qfile and options.batch_dir or \
                 parser.error("In batch mode, you have to specify both -b and -d")
-            assert os.path.exists(options.batch_qfile)
+            if options.batch_qfile == "-":
+                queries_fd = sys.stdin
+            else:
+                assert os.path.exists(options.batch_qfile)
+                queries_fd = open(options.batch_qfile)
+            self.batch_queries = queries_fd.read().strip().split("\n")
             ensure_dir_exists(options.batch_dir)
-            self.batch_queries = open(options.batch_qfile).read().strip().split("\n")
             self.batch_dir = options.batch_dir
         else:
             self.batch_queries = None
@@ -211,10 +215,17 @@ def main():
     for facet in args.batch_queries:
         if args.verbose:
             print "processing \"%s\" tags" % facet
+        facet_dir = "%s/%s" % (args.batch_dir, facet)
+        ensure_dir_exists(facet_dir)
         for tag in vocabulary.tags_of_facet(facet):
             args.match_tags = set([tag])
             pkg_objs = gen_matches(tag_db, pkgs_by_name, args)
-            filename = "%s/%s.txt" % (args.batch_dir, tag)
+            try:
+                tag_value = tag.split("::")[1]
+            except ValueError:
+                warn("skipping invalid tag \"%s\"" % tag)
+                continue
+            filename = "%s/%s" % (facet_dir, tag_value)
             matches = format_matches(pkg_objs, args)
             create_file(filename, matches)
             tag_db.seek(0)

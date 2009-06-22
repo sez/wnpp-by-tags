@@ -47,18 +47,18 @@ class QueryTest(unittest.TestCase):
     prog = None
     prog = "./wnpp_by_tags.py --cache-dir %s" % cache_dir
     def testTagMatching1(self):
-        expected_result = "RFA 447393 bins 29 \nO 503554 a2ps-perl-ja 28 "
+        expected_result = "RFA 447393 bins 29 n/a\nO 503554 a2ps-perl-ja 28 n/a"
         status, output = run("%s -t o,rfa -m implemented-in::perl" % QueryTest.prog)
         self.assertEqual(status, 0)
         self.assertEqual(output, expected_result)
     def testTagMatching2(self):
         """Same as previous test but for RFA only."""
-        expected_result = "RFA 447393 bins 29 "
+        expected_result = "RFA 447393 bins 29 n/a"
         status, output = run("%s -t rfa -m implemented-in::perl" % QueryTest.prog)
         self.assertEqual(status, 0)
         self.assertEqual(output, expected_result)
     def testTagMatchingAndExclusion(self):
-        expected_result = "RFA 447393 bins 29 "
+        expected_result = "RFA 447393 bins 29 n/a"
         status, output = run("%s -t o,rfa -m implemented-in::perl -x use::printing" % \
                 QueryTest.prog)
         self.assertEqual(status, 0)
