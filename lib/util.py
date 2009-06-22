@@ -92,7 +92,7 @@ def wget(server, url_paths, dest_dir, verbose=False):
             downloaded_page = http_client.get(url_path)
             create_file("%s/%s" % (dest_dir, filename), downloaded_page)
         except Exception, e:
-            warn("failed to download ``%s'' bugs (%s)" % (url_path, e))
+            warn("failed to download ``%s'' (%s)" % (url_path, e))
     http_client.close()
 
 def decompress_gzip(gz_filename, uncompressed_filename=None):

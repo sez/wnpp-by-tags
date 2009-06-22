@@ -175,18 +175,25 @@ def main():
     if args.show_untagged:
         # select only packages without tags
         pkg_objs = [p for p in pkgs_by_name.itervalues() if not p.tags]
+        display_matches(pkg_objs, args)
     else:
         # filter packages using user-supplied tags
         tag_db = StringIO("\n".join([str(p) for p in pkgs_by_name.itervalues()]))
-        matching_pkg_names = filter_pkgs(tag_db, args.match_tags, args.excl_tags)
-        pkg_objs = [pkgs_by_name[p] for p in matching_pkg_names.iter_packages()]
-        pkg_objs = [p for p in pkg_objs if p.tags]
+        pkg_objs = gen_matches(tag_db, pkgs_by_name, args)
+        display_matches(pkg_objs, args)
+
+def gen_matches(tag_db, pkgs_by_name, args, fd=sys.stdout, verbose=False):
+    matching_pkg_names = filter_pkgs(tag_db, args.match_tags, args.excl_tags)
+    pkg_objs = [pkgs_by_name[p] for p in matching_pkg_names.iter_packages()]
+    pkg_objs = [p for p in pkg_objs if p.tags]
 
     if args.verbose:
         nbugs = sum([len(p.bugs) for p in pkgs_by_name.itervalues()])
         print "loaded %d bugs in %s packages; query matches %d packages" \
                 % (nbugs, len(pkgs_by_name), len(pkg_objs))
+    return pkg_objs
 
+def display_matches(pkg_objs, args):
     # print list of matching packages, along with bug number and popcon
     for pkg_obj in sorted(pkg_objs, reverse=True):
         for bug in pkg_obj.bug_list():
