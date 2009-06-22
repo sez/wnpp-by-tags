@@ -24,7 +24,7 @@ from StringIO import StringIO
 from glob import glob
 
 from lib.config import Config
-from lib.util import warn, giveup, ensure_dir_exists
+from lib.util import warn, giveup, ensure_dir_exists, create_file
 from lib.bugs import extract_bugs, update_bug_data, Package, BugType
 from lib.debtags import filter_pkgs, Debtags, TagVocabulary
 from lib.popcon import Popcon, update_popcon_data, POPCON_FNAME
@@ -42,9 +42,16 @@ class Arguments:
         usage = \
 """usage: %prog --match-tags t1,t2,... [--exclude-tags t3,t4,...]
                      [-t RFA,O,...] [-f] [-v]
+       %prog --batch-queries-file --results-dir <dirname>
        %prog --list-valid-tags
        %prog --untagged-pkgs-only"""
         parser = OptionParser(usage)
+        parser.add_option("-b", "--batch-queries-file", dest="batch_qfile",
+                          help="""in batch mode, read queries from this file
+                          (one query per line)""", default=None)
+        parser.add_option("-d", "--dest-dir", dest="batch_dir",
+                          help="""in batch mode, create a result file for
+                          every query in this directory""", default=None)
         parser.add_option("-m", "--match-tags", dest="match_tags",
                           help="""match packages having all these tags
                           (comma-separated list; not to be used with -l or -u)""")
@@ -93,9 +100,20 @@ class Arguments:
             print "wnpp-by-tags %s" % __version__
             exit(0)
         options.match_tags or options.show_untagged or options.list_tags or \
-            parser.error("Please specify at least either -m, -u or -l")
+                options.batch_qfile or \
+            parser.error("Please specify at least either -m, -b, -u or -l")
         options.match_tags and options.show_untagged and \
             parser.error("Please specify either -m or -u")
+        if options.batch_qfile or options.batch_dir:
+            options.batch_qfile and options.batch_dir or \
+                parser.error("In batch mode, you have to specify both -b and -d")
+            assert os.path.exists(options.batch_qfile)
+            ensure_dir_exists(options.batch_dir)
+            self.batch_queries = open(options.batch_qfile).read().strip().split("\n")
+            self.batch_dir = options.batch_dir
+        else:
+            self.batch_queries = None
+            self.batch_dir = None
 
         self.match_tags = set()
         self.excl_tags = set()
@@ -139,7 +157,7 @@ def main():
     if not os.path.exists(args.tags_file):
         giveup("The tag vocabulary file %s doesn't exist" % args.tags_file)
 
-    if args.match_tags or args.list_tags:
+    if args.match_tags or args.list_tags or args.batch_queries:
         vocabulary = TagVocabulary(args.tags_file)
         if args.list_tags:
             print vocabulary
@@ -175,33 +193,50 @@ def main():
     if args.show_untagged:
         # select only packages without tags
         pkg_objs = [p for p in pkgs_by_name.itervalues() if not p.tags]
-        display_matches(pkg_objs, args)
-    else:
-        # filter packages using user-supplied tags
-        tag_db = StringIO("\n".join([str(p) for p in pkgs_by_name.itervalues()]))
-        pkg_objs = gen_matches(tag_db, pkgs_by_name, args)
-        display_matches(pkg_objs, args)
-
-def gen_matches(tag_db, pkgs_by_name, args, fd=sys.stdout, verbose=False):
-    matching_pkg_names = filter_pkgs(tag_db, args.match_tags, args.excl_tags)
-    pkg_objs = [pkgs_by_name[p] for p in matching_pkg_names.iter_packages()]
-    pkg_objs = [p for p in pkg_objs if p.tags]
+        print format_matches(pkg_objs, args)
+        exit(0)
 
     if args.verbose:
         nbugs = sum([len(p.bugs) for p in pkgs_by_name.itervalues()])
-        print "loaded %d bugs in %s packages; query matches %d packages" \
-                % (nbugs, len(pkgs_by_name), len(pkg_objs))
-    return pkg_objs
+        print "loaded %d bugs in %s packages" % (nbugs, len(pkgs_by_name))
 
-def display_matches(pkg_objs, args):
-    # print list of matching packages, along with bug number and popcon
+    # filter packages using user-supplied tags
+    tag_db = StringIO("\n".join([str(p) for p in pkgs_by_name.itervalues()]))
+    if not args.batch_queries:
+        pkg_objs = gen_matches(tag_db, pkgs_by_name, args)
+        print format_matches(pkg_objs, args)
+        exit(0)
+
+    # else we're in batch mode
+    for facet in args.batch_queries:
+        if args.verbose:
+            print "processing \"%s\" tags" % facet
+        for tag in vocabulary.tags_of_facet(facet):
+            args.match_tags = set([tag])
+            pkg_objs = gen_matches(tag_db, pkgs_by_name, args)
+            filename = "%s/%s.txt" % (args.batch_dir, tag)
+            matches = format_matches(pkg_objs, args)
+            create_file(filename, matches)
+            tag_db.seek(0)
+
+def gen_matches(tag_db, pkgs_by_name, args):
+    matching_pkg_names = filter_pkgs(tag_db, args.match_tags, args.excl_tags)
+    pkg_objs = [pkgs_by_name[p] for p in matching_pkg_names.iter_packages()]
+    return [p for p in pkg_objs if p.tags]
+
+def format_matches(pkg_objs, args):
+    """Return a string-formated list of matching packages, along with bug
+       number and popcon."""
+    result = []
     for pkg_obj in sorted(pkg_objs, reverse=True):
         for bug in pkg_obj.bug_list():
             if bug.type == 'BA' and \
                bug.dust < args.conf.being_adopted_threshold_in_days:
                    continue
-            print "%s %s %s %d %s" % (bug.type, bug.bug_no, pkg_obj.name,
-                                             pkg_obj.popcon, bug.dust)
+            result.append("%s %s %s %d %s" % (bug.type, bug.bug_no,
+                                                pkg_obj.name, pkg_obj.popcon,
+                                                bug.dust))
+    return "\n".join(result)
 
 if __name__ == '__main__':
     main()

@@ -63,5 +63,10 @@ class TagVocabulary(object):
             print "using vocabulary of %s tags" % len(self.tags)
     def invalid_tags(self, tags):
         return set(tags) - self.tags
+    def tags_of_facet(self, facet):
+        if not facet.endswith("::"):
+            facet = "%s::" % facet
+        return set([tag for tag in self.tags if tag.startswith(facet)
+                                             and not tag.endswith("TODO")])
     def __str__(self):
         return "\n".join(sorted(list(self.tags)))
