@@ -1,0 +1,5 @@
+wnpp_by_tags.py allows you to query debian RFA/O/RFH/BA (being adopted) bugs
+    using debtags (meant for interactive use)
+
+html-format.py html-formates batch query results from wnpp_by_tags (meant for
+    publishing static HTML pages over the web)

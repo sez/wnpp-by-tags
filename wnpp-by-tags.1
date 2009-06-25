@@ -16,11 +16,20 @@ altered).
 
 By default, wnpp-by-tags searches against the following kinds of bugs:
 orphaned (O), help requested (RFH), being adopted (BA), and request for
-adoption.
+wnpp_by_tags.py \fB\-\-list\-valid\-tags\fR
+wnpp_by_tags.py \fB\-\-untagged\-pkgs\-only\fR
 .SH OPTIONS
 .TP
 \fB\-h\fR, \fB\-\-help\fR
 show this help message and exit
+.TP
+\fB\-b\fR BATCH_QFILE, \fB\-\-batch\-queries\-file\fR=\fIBATCH_QFILE\fR
+in batch mode, read queries from this file
+(one query per line)
+.TP
+\fB\-d\fR BATCH_DIR, \fB\-\-dest\-dir\fR=\fIBATCH_DIR\fR
+in batch mode, create a result file for
+every query in this directory
 .TP
 \fB\-m\fR MATCH_TAGS, \fB\-\-match\-tags\fR=\fIMATCH_TAGS\fR
 match packages having all these tags
@@ -71,7 +80,7 @@ against this tag file (default:
 \fB\-V\fR, \fB\-\-version\fR
 show version information
 .SH "CONFIGURATION FILE"
-Some options can be overriden in ~/.wnpp-by-tags.rc:
+Some options can be overriden in ~/.wnpptagsrc:
 .PP
 \fIbugs_update_period_in_days\fR (default: \fI30\fR)
 .RS 4
