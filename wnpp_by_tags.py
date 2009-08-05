@@ -42,7 +42,7 @@ class Arguments:
         usage = \
 """usage: %prog --match-tags t1,t2,... [--exclude-tags t3,t4,...]
                      [-t RFA,O,...] [-f] [-v]
-       %prog --batch-queries-file --results-dir <dirname>
+       %prog --batch-queries-file --dest-dir <dirname>
        %prog --list-valid-tags
        %prog --untagged-pkgs-only"""
         parser = OptionParser(usage)
