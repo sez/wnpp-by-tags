@@ -125,14 +125,17 @@ def main():
             for line in open(src_tag_file).readlines():
                 # the columns are: bug type, bug number, package, popcon, dust
                 cols = line.rstrip().split(" ")
+                _, bug_no, package_name, popcon = cols[:4]
                 if len(cols) != 5:
                     sys.stderr.write("skipping invalid line \"%s\"" % line)
                     continue
                 # add link for bug number and package
                 cols[1] = '<a href="http://bugs.debian.org/%s">%s</a>' \
-                        % (cols[1], cols[1])
-                cols[2] = '<a href="http://packages.debian.org/%s">%s</a>' \
-                        % (cols[2], cols[2])
+                        % (bug_no, bug_no)
+                cols[2] = '<a href="http://packages.qa.debian.org/%s/%s.html">%s</a>' \
+                        % (package_name[0], package_name, package_name)
+                cols[3] = '<a href="http://qa.debian.org/popcon.php?package=%s">%s</a>' \
+                        % (package_name, popcon)
                 cols = "</td><td>".join(cols)
                 bug_table_rows.append("<tr><td>%s</td></tr>" % cols)
             nbugs = len(bug_table_rows)
