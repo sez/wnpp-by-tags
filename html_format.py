@@ -165,7 +165,7 @@ def main():
     formated_facets = ["<li><a href=\"./%s/index.html\">%s</a></li>" % (f, f)
                        for f in facets]
     create_file("%s/index.html" % dst_dir,
-                main_page_template % ("\n".join(formated_facets),
+                main_page_template % ("\n".join(sorted(formated_facets)),
                                       index_page_msg,  timestamp))
 
 if __name__ == '__main__':
