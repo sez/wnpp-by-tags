@@ -22,7 +22,7 @@ import os
 import sys
 import time
 
-from lib.util import create_file, ensure_dir_exists, giveup, warn
+from lib.util import create_file, ensure_dir_exists, giveup
 
 bugs_html_template =\
 """
@@ -45,6 +45,8 @@ bugs_html_template =\
             </tr>
         %s
         </table>
+    <p>back to <a href="./index.html">%s::*</a> tags or
+    <a href="../index.html">all facets</a></p>
     <h6>updated nightly; last update: %s</h6>
     </body>
 </html>
@@ -68,6 +70,7 @@ facet_values_html_template =\
             </tr>
             %s
         </table>
+    <p>back to <a href="../index.html">all facets</a></p>
     <h6>updated nightly; last update: %s</h6>
     </body>
 </html>
@@ -89,28 +92,34 @@ main_page_template =\
     <ul>
       %s
     </ul>
-    <p>
-    (drop me an <a href="mailto:serzan-AT-hellug-DOT-gr">email</a> if there's
-    another facet you'd like to see added here; see also <a
-    href="http://wnpp.debian.net">wnpp.debian.net</a>)
-    </p>
+    %s
     <h6>updated nightly; last update: %s</h6>
     </body>
 </html>
 """
 
+def syntax():
+    print "syntax: %s <src-dir> <dest-dir> [text file]" % os.path.basename(sys.argv[0])
+    print "src-dir is the directory hierarchy created by running wnpp_by_tags.py"
+    print "in batch mode. The contents of the optional text file will be added"
+    print "verbatim at the bottom of the main index.html"
+    exit(0)
+
 def main():
+    if  len(sys.argv) < 2 or '-h' in sys.argv or '--help' in sys.argv:
+        syntax()
+    src_dir = sys.argv[1]
+    dst_dir = sys.argv[2]
     try:
-        src_dir = sys.argv[1]
-        dst_dir = sys.argv[2]
+        if not os.path.isfile(sys.argv[3]):
+            giveup("\"%s\" does not exist or is not a file" % sys.argv[3])
+        index_page_msg = open(sys.argv[3]).read()
     except IndexError:
-        warn("syntax: %s <src-dir> <dest-dir>" % os.path.basename(sys.argv[0]))
-        giveup("src-dir is the directory hierarchy created by running wnpp_by_tags.py in batch mode")
-        exit(1)
+        index_page_msg = ""
     if not os.path.isdir(src_dir):
         giveup("\"%s\" does not exist or is not a directory" % src_dir)
     facets = []
-    timestamp = "%s-%s-%d %s:%s" % time.gmtime()[:5]
+    timestamp = "%d-%02d-%02d %02d:%02d" % time.gmtime()[:5]
     for src_facet_dir in glob("%s/*" % src_dir):
         if not os.path.isdir(src_facet_dir):
             continue
@@ -148,7 +157,7 @@ def main():
             # FIXME: use newstyle dicts instead
             tag = "%s::%s" % (facet, facet_value)
             html_doc = bugs_html_template % (tag, tag, "\n".join(bug_table_rows),
-                                             timestamp)
+                                             facet, timestamp)
             create_file(dst_tag_file, html_doc)
         content = facet_values_html_template % \
                 (facet, facet, facet, "\n".join(sorted(facet_values)), timestamp)
@@ -156,7 +165,8 @@ def main():
     formated_facets = ["<li><a href=\"./%s/index.html\">%s</a></li>" % (f, f)
                        for f in facets]
     create_file("%s/index.html" % dst_dir,
-                main_page_template % ("\n".join(formated_facets), timestamp))
+                main_page_template % ("\n".join(formated_facets),
+                                      index_page_msg,  timestamp))
 
 if __name__ == '__main__':
     main()
