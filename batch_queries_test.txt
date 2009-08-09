@@ -1,2 +1,4 @@
+admin
+hardware
 implemented-in
 suite
