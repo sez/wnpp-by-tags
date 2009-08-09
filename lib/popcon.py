@@ -28,7 +28,7 @@ class Popcon(object):
             if line.startswith("Package:"):
                 line = remove_space_dups(line)
                 try:
-                    _, pkg, inst, = line.split(" ")[:3]
+                    _, pkg, _, inst, = line.split(" ")[:4]
                     self.inst_by_pkg[pkg] = int(inst)
                 except ValueError:
                     warn("failed to parse popcon inst value for '%s'" % pkg)
